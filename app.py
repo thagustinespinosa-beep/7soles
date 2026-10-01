@@ -31,7 +31,10 @@ def cliente_index():
 
 @app.route('/api/bebidas', methods=['GET'])
 def get_bebidas():
-    return jsonify(bebidas)
+    return jsonify([
+        {**bebida, "disponible": bebida["stock"] > 0}
+        for bebida in bebidas
+    ])
 
 @app.route('/api/pedidos/crear', methods=['POST'])
 def crear_pedido():
