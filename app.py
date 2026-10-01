@@ -1,5 +1,6 @@
 import csv
 import json
+import math
 import os
 import uuid
 from functools import wraps
@@ -475,38 +476,41 @@ def toggle_delivery():
 @app.route('/api/admin/aceptar_pedido', methods=['POST'])
 @admin_required
 def aceptar_pedido():
-    data = request.json
-    pedido_id = int(data.get('id'))
-    
-    for p in pedidos:
-        if p['id'] == pedido_id:
-            p['estado'] = 'Confirmado'
-            num_tel = ''.join(filter(str.isdigit, str(p.get('telefono', ''))))
-            mensaje_texto = mensaje_detalle_pedido(p, "Tu pedido fue confirmado y ya está en proceso.")
-            
-            return jsonify({
-                "status": "ok", 
-                "mensaje": "Pedido confirmado",
-                "telefono": num_tel,
-                "texto_whatsapp": mensaje_texto
-            })
-            
-    return jsonify({"status": "error", "mensaje": "Pedido no encontrado"}), 404
+    data = request.get_json(silent=True) or {}
+    try:
+        pedido_id = int(data.get('id'))
+    except (TypeError, ValueError):
+        return jsonify({"status": "error", "mensaje": "ID de pedido inválido"}), 400
 
+    pedido = next((item for item in pedidos if item['id'] == pedido_id), None)
+    if pedido is None:
+        return jsonify({"status": "error", "mensaje": "Pedido no encontrado"}), 404
 
-def mensaje_detalle_pedido(pedido, encabezado):
-    costo_envio = pedido.get('costo_envio')
-    detalle_envio = (
-        f"Costo de Envío (asignado por la tienda): ${costo_envio:.2f}"
-        if costo_envio is not None
-        else "Costo de Envío: A confirmar por el vendedor"
-    )
-    total = f"${pedido['total']:.2f}" if costo_envio is not None else f"${pedido.get('subtotal_productos', pedido['total']):.2f} + envío a confirmar"
-    return (
-        f"Hola {pedido['cliente']}. {encabezado} Pedido N°{pedido['id']}. "
-        f"Subtotal Productos: ${pedido.get('subtotal_productos', pedido['total']):.2f}. "
-        f"{detalle_envio}. TOTAL FINAL A PAGAR: {total}."
-    )
+    if pedido.get('entrega') == 'delivery':
+        costo_enviado = data.get('costo_envio')
+        if costo_enviado not in (None, ''):
+            try:
+                costo_envio = round(float(costo_enviado), 2)
+            except (TypeError, ValueError):
+                return jsonify({"status": "error", "mensaje": "Ingresá un costo de envío válido."}), 400
+            if not math.isfinite(costo_envio) or costo_envio < 0:
+                return jsonify({"status": "error", "mensaje": "El costo de envío debe ser un monto válido y no negativo."}), 400
+            pedido['costo_envio'] = costo_envio
+            pedido['estado_envio'] = 'Asignado por la tienda'
+
+        if pedido.get('costo_envio') is None:
+            return jsonify({"status": "error", "mensaje": "Asigná el costo de envío antes de aceptar este pedido."}), 400
+        pedido['total'] = round(float(pedido.get('subtotal_productos', pedido.get('total', 0))) + pedido['costo_envio'], 2)
+
+    pedido['estado'] = 'Confirmado'
+    return jsonify({
+        "status": "ok",
+        "mensaje": "Pedido confirmado",
+        "pedido_id": pedido_id,
+        "estado": pedido['estado'],
+        "costo_envio": pedido.get('costo_envio'),
+        "total": pedido.get('total')
+    })
 
 
 @app.route('/api/admin/asignar_costo_envio', methods=['POST', 'PUT'])
@@ -530,8 +534,6 @@ def asignar_costo_envio():
     pedido['costo_envio'] = costo_envio
     pedido['estado_envio'] = 'Asignado por la tienda'
     pedido['total'] = round(float(pedido.get('subtotal_productos', pedido.get('total', 0))) + costo_envio, 2)
-    telefono = ''.join(filter(str.isdigit, str(pedido.get('telefono', ''))))
-    texto_whatsapp = mensaje_detalle_pedido(pedido, 'La tienda confirmó el costo de envío.')
     return jsonify({
         "status": "ok",
         "pedido_id": pedido_id,
@@ -539,8 +541,6 @@ def asignar_costo_envio():
         "subtotal_productos": pedido['subtotal_productos'],
         "total": pedido['total'],
         "estado_envio": pedido['estado_envio'],
-        "telefono": telefono,
-        "texto_whatsapp": texto_whatsapp,
         "mensaje": "Costo de envío guardado y total recalculado"
     })
 
@@ -557,14 +557,12 @@ def rechazar_pedido():
         if p['id'] == pedido_id:
             p['estado'] = 'Rechazado'
             p['motivo_rechazo'] = motivo
-            num_tel = ''.join(filter(str.isdigit, str(p.get('telefono', ''))))
-            mensaje_texto = f"Hola {p['cliente']}. Lamentablemente tu pedido N°{p['id']} no pudo ser procesado. Motivo: {motivo}"
-            
             return jsonify({
                 "status": "ok", 
                 "mensaje": "Pedido rechazado",
-                "telefono": num_tel,
-                "texto_whatsapp": mensaje_texto
+                "pedido_id": pedido_id,
+                "estado": p['estado'],
+                "motivo_rechazo": motivo
             })
             
     return jsonify({"status": "error", "mensaje": "Pedido no encontrado"}), 404
@@ -578,14 +576,11 @@ def finalizar_pedido():
     for p in pedidos:
         if p['id'] == pedido_id:
             p['estado'] = 'Finalizado'
-            num_tel = ''.join(filter(str.isdigit, str(p.get('telefono', ''))))
-            mensaje_texto = f"¡Hola {p['cliente']}! 🚀 Tu pedido N°{p['id']} ha sido COMPLETADO. ¡Gracias por tu compra!"
-            
             return jsonify({
                 "status": "ok", 
                 "mensaje": "Pedido finalizado",
-                "telefono": num_tel,
-                "texto_whatsapp": mensaje_texto
+                "pedido_id": pedido_id,
+                "estado": p['estado']
             })
             
     return jsonify({"status": "error", "mensaje": "Pedido no encontrado"}), 404
