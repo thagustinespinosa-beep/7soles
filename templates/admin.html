@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Administración - Creador</title>
+    <title>7 Soles II | Administración</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body class="admin-bg">
 
     <header class="admin-header">
-        <h1>⚙️ Panel del Creador (Administración)</h1>
+        <h1>7 Soles II | Administración</h1>
         <div style="display: flex; gap: 16px; align-items: center;">
             <a href="/" style="color: white; font-weight: bold;">Ver tienda pública</a>
             <form action="/admin/logout" method="post" style="margin: 0;">
@@ -22,7 +22,7 @@
         
         <!-- ESTADO DEL DELIVERY -->
         <section class="card admin-card">
-            <h2>🚚 Estado del Delivery</h2>
+            <h2>Estado del Delivery</h2>
             <label class="switch-container">
                 <input type="checkbox" id="delivery-toggle" onchange="cambiarEstadoDelivery(this.checked)" 
                 {% if configuracion and configuracion.delivery_disponible %} checked {% endif %}>
@@ -34,16 +34,16 @@
         <!-- SECCIÓN DE PEDIDOS POR ESTADO -->
         <section class="card admin-card">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <h2>📥 Gestión de Pedidos</h2>
-                <button class="btn-guardar" onclick="cargarPedidos()" style="width: auto; padding: 5px 15px;">🔄 Actualizar Pedidos</button>
+                <h2>Gestión de Pedidos</h2>
+                <button class="btn-guardar" onclick="cargarPedidos()" style="width: auto; padding: 5px 15px;">Actualizar Pedidos</button>
             </div>
 
             <!-- Filtro de Estados -->
             <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 15px;">
-                <button onclick="filtrarPedidos('Pendiente')" style="padding: 8px 15px; border-radius: 5px; cursor: pointer; border: none; font-weight: bold; background-color: #e67e22; color: white;">⏳ Pendientes (<span id="cant-pendiente">0</span>)</button>
-                <button onclick="filtrarPedidos('Confirmado')" style="padding: 8px 15px; border-radius: 5px; cursor: pointer; border: none; font-weight: bold; background-color: #27ae60; color: white;">✅ Confirmados / En proceso (<span id="cant-confirmado">0</span>)</button>
-                <button onclick="filtrarPedidos('Finalizado')" style="padding: 8px 15px; border-radius: 5px; cursor: pointer; border: none; font-weight: bold; background-color: #2980b9; color: white;">🏁 Finalizados (<span id="cant-finalizado">0</span>)</button>
-                <button onclick="filtrarPedidos('Rechazado')" style="padding: 8px 15px; border-radius: 5px; cursor: pointer; border: none; font-weight: bold; background-color: #c0392b; color: white;">❌ Rechazados (<span id="cant-rechazado">0</span>)</button>
+                <button onclick="filtrarPedidos('Pendiente')" style="padding: 8px 15px; border-radius: 5px; cursor: pointer; border: none; font-weight: bold; background-color: #e67e22; color: white;">Pendientes (<span id="cant-pendiente">0</span>)</button>
+                <button onclick="filtrarPedidos('Confirmado')" style="padding: 8px 15px; border-radius: 5px; cursor: pointer; border: none; font-weight: bold; background-color: #27ae60; color: white;">Confirmados / En proceso (<span id="cant-confirmado">0</span>)</button>
+                <button onclick="filtrarPedidos('Finalizado')" style="padding: 8px 15px; border-radius: 5px; cursor: pointer; border: none; font-weight: bold; background-color: #2980b9; color: white;">Finalizados (<span id="cant-finalizado">0</span>)</button>
+                <button onclick="filtrarPedidos('Rechazado')" style="padding: 8px 15px; border-radius: 5px; cursor: pointer; border: none; font-weight: bold; background-color: #c0392b; color: white;">Rechazados (<span id="cant-rechazado">0</span>)</button>
             </div>
 
             <div id="lista-pedidos">
@@ -53,7 +53,7 @@
 
         <!-- AGREGAR NUEVA BEBIDA -->
         <section class="card admin-card">
-            <h2>➕ Agregar Nueva Bebida al Catálogo</h2>
+            <h2>Agregar Nueva Bebida al Catálogo</h2>
             <form id="form-nueva-bebida" onsubmit="agregarNuevaBebida(event)" enctype="multipart/form-data" class="form-grid">
                 <div>
                     <label>Nombre de la bebida:</label>
@@ -89,7 +89,7 @@
         <!-- GESTIÓN DE STOCK Y PRECIOS EXISTENTES -->
         <section class="card admin-card">
             <div style="display: flex; justify-content: space-between; gap: 12px; align-items: center; flex-wrap: wrap;">
-                <h2>📦 Gestión de Stock y Precios</h2>
+                <h2>Gestión de Stock y Precios</h2>
                 <button type="button" class="btn-guardar" onclick="sincronizarCatalogoCsv()" style="width: auto;">Actualizar catálogo desde CSV</button>
             </div>
             <div style="overflow-x: auto;">
@@ -212,23 +212,23 @@
                     acciones += `
                         <div style="display: flex; gap: 10px; margin-top: 10px;">
                             <button class="btn-guardar" onclick="aceptarPedido(${p.id})" style="background-color: #27ae60;">
-                                ✅ Aceptar pedido
+                                Aceptar pedido
                             </button>
                             <button class="btn-guardar" onclick="rechazarPedido(${p.id})" style="background-color: #c0392b;">
-                                ❌ Rechazar Pedido
+                                Rechazar Pedido
                             </button>
                         </div>
                     `;
                 } else if (p.estado === 'Confirmado') {
                     acciones += `
                         <button class="btn-guardar" onclick="finalizarPedido(${p.id})" style="margin-top: 10px; background-color: #2980b9;">
-                            🏁 Marcar como Terminado / Entregado
+                            Marcar como Terminado / Entregado
                         </button>
                     `;
                 } else if (p.estado === 'Rechazado') {
-                    acciones += `<p style="color: #c0392b; font-weight: bold; margin-top: 8px;">❌ Cancelado: ${p.motivo_rechazo || 'Sin motivo'}</p>`;
+                    acciones += `<p style="color: #c0392b; font-weight: bold; margin-top: 8px;">Cancelado: ${p.motivo_rechazo || 'Sin motivo'}</p>`;
                 } else {
-                    acciones += `<p style="color: #27ae60; font-weight: bold; margin-top: 8px;">✔ Pedido Finalizado</p>`;
+                    acciones += `<p style="color: #27ae60; font-weight: bold; margin-top: 8px;">Pedido Finalizado</p>`;
                 }
 
                 div.innerHTML = `
@@ -238,10 +238,10 @@
                             ${p.estado}
                         </span>
                     </div>
-                    <p>👤 <strong>Cliente:</strong> ${p.cliente} | 📞 <strong>Tel:</strong> ${p.telefono}</p>
-                    <p>🚚 <strong>Entrega:</strong> ${(p.entrega || '').toUpperCase()} ${p.direccion ? `(${p.direccion})` : ''}</p>
-                    <p>💳 <strong>Método de Pago:</strong> ${p.metodoPago}</p>
-                    <p>🛒 <strong>Detalle:</strong> ${listaItems}</p>
+                    <p><strong>Cliente:</strong> ${p.cliente} | <strong>Tel:</strong> ${p.telefono}</p>
+                    <p><strong>Entrega:</strong> ${(p.entrega || '').toUpperCase()} ${p.direccion ? `(${p.direccion})` : ''}</p>
+                    <p><strong>Método de Pago:</strong> ${p.metodoPago}</p>
+                    <p><strong>Detalle:</strong> ${listaItems}</p>
                     ${p.entrega !== 'delivery' ? `<p style="font-size: 16px; margin-top: 5px;"><strong>Total: $${formatoPrecio(p.total)}</strong></p>` : ''}
                     ${acciones}
                 `;
