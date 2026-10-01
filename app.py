@@ -119,7 +119,7 @@ def cliente_index():
 @app.route('/api/bebidas', methods=['GET'])
 def get_bebidas():
     return jsonify([
-        {**bebida, "disponible": bebida["stock"] > 0 and bebida["precio_final"] > 0}
+        {**bebida, "disponible": bebida["stock"] > 0 and bebida["precio"] > 0}
         for bebida in bebidas
     ])
 
@@ -144,23 +144,33 @@ def crear_pedido():
 
     items_pedido = []
     subtotal = 0
+    subtotal_con_descuento_producto = 0
+    es_efectivo = data.get('metodoPago') == 'Efectivo'
     for producto_id, cantidad in cantidades.items():
         producto = productos_por_id[producto_id]
         if cantidad > producto['stock']:
             return jsonify({"status": "error", "mensaje": f"Stock insuficiente para {producto['nombre']}"}), 409
-        precio_unitario = producto['precio_final']
+        precio_normal = round(float(producto['precio']), 2)
+        precio_unitario = round(float(producto.get('precio_final', precio_normal)), 2) if es_efectivo else precio_normal
+        total_normal = round(precio_normal * cantidad, 2)
         total_item = round(precio_unitario * cantidad, 2)
-        subtotal += total_item
+        subtotal += total_normal
+        subtotal_con_descuento_producto += total_item
         items_pedido.append({
             'id': producto_id,
             'nombre': producto['nombre'],
             'cantidad': cantidad,
+            'precio_normal': precio_normal,
             'precio_unitario': precio_unitario,
+            'descuento_pct': producto.get('descuento_pct', 0) if es_efectivo else 0,
             'total': total_item
         })
 
     subtotal = round(subtotal, 2)
-    descuento_efectivo = round(subtotal * CASH_DISCOUNT_PERCENT / 100, 2) if data.get('metodoPago') == 'Efectivo' else 0
+    subtotal_con_descuento_producto = round(subtotal_con_descuento_producto, 2)
+    descuento_producto = round(subtotal - subtotal_con_descuento_producto, 2) if es_efectivo else 0
+    descuento_efectivo = round(subtotal_con_descuento_producto * CASH_DISCOUNT_PERCENT / 100, 2) if es_efectivo else 0
+    total = round(subtotal_con_descuento_producto - descuento_efectivo, 2)
     nuevo_pedido = {
         "id": contador_pedidos,
         "cliente": data.get("nombre"),
@@ -170,8 +180,9 @@ def crear_pedido():
         "metodoPago": data.get("metodoPago"),
         "items": items_pedido,
         "subtotal": subtotal,
+        "descuento_producto": descuento_producto,
         "descuento_efectivo": descuento_efectivo,
-        "total": round(subtotal - descuento_efectivo, 2),
+        "total": total,
         "estado": "Pendiente",
         "motivo_rechazo": ""
     }
