@@ -1,0 +1,1355 @@
+{
+  "csv_mtime_ns": 1790865917134352116,
+  "bebidas": [
+    {
+      "id": 1,
+      "nombre": "BRAHMA",
+      "precio": 37500.0,
+      "descuento_pct": 1.3333,
+      "precio_final": 37000.0,
+      "stock": 12,
+      "imagen": ""
+    },
+    {
+      "id": 2,
+      "nombre": "QUILMES",
+      "precio": 37500.0,
+      "descuento_pct": 1.3333,
+      "precio_final": 37000.0,
+      "stock": 12,
+      "imagen": ""
+    },
+    {
+      "id": 3,
+      "nombre": "PALERMO",
+      "precio": 28500.0,
+      "descuento_pct": 1.7544,
+      "precio_final": 28000.0,
+      "stock": 12,
+      "imagen": ""
+    },
+    {
+      "id": 4,
+      "nombre": "IGUANA",
+      "precio": 28500.0,
+      "descuento_pct": 1.7544,
+      "precio_final": 28000.0,
+      "stock": 12,
+      "imagen": ""
+    },
+    {
+      "id": 5,
+      "nombre": "STELLA",
+      "precio": 55000.0,
+      "descuento_pct": 1.8182,
+      "precio_final": 54000.0,
+      "stock": 12,
+      "imagen": ""
+    },
+    {
+      "id": 6,
+      "nombre": "HEINEKEN",
+      "precio": 55000.0,
+      "descuento_pct": 1.8182,
+      "precio_final": 54000.0,
+      "stock": 12,
+      "imagen": ""
+    },
+    {
+      "id": 7,
+      "nombre": "BUDWEISER",
+      "precio": 39780.0,
+      "descuento_pct": 1.9608,
+      "precio_final": 39000.0,
+      "stock": 12,
+      "imagen": ""
+    },
+    {
+      "id": 8,
+      "nombre": "MILLER",
+      "precio": 40800.0,
+      "descuento_pct": 1.9608,
+      "precio_final": 40000.0,
+      "stock": 12,
+      "imagen": ""
+    },
+    {
+      "id": 9,
+      "nombre": "IMPERIAL GOLDEN",
+      "precio": 39800.0,
+      "descuento_pct": 2.0101,
+      "precio_final": 39000.0,
+      "stock": 12,
+      "imagen": ""
+    },
+    {
+      "id": 10,
+      "nombre": "CORONA 710",
+      "precio": 57500.0,
+      "descuento_pct": 2.6087,
+      "precio_final": 56000.0,
+      "stock": 12,
+      "imagen": ""
+    },
+    {
+      "id": 11,
+      "nombre": "LATA QUILMES",
+      "precio": 0,
+      "descuento_pct": 2.0,
+      "precio_final": 0.0,
+      "stock": 24,
+      "imagen": ""
+    },
+    {
+      "id": 12,
+      "nombre": "LATA BRAHMA",
+      "precio": 43800.0,
+      "descuento_pct": 1.8265,
+      "precio_final": 43000.0,
+      "stock": 24,
+      "imagen": ""
+    },
+    {
+      "id": 13,
+      "nombre": "LATA MILLER",
+      "precio": 44880.0,
+      "descuento_pct": 1.9608,
+      "precio_final": 44000.0,
+      "stock": 24,
+      "imagen": ""
+    },
+    {
+      "id": 14,
+      "nombre": "LATA SCHNEIDER",
+      "precio": 36720.0,
+      "descuento_pct": 1.9608,
+      "precio_final": 36000.0,
+      "stock": 24,
+      "imagen": ""
+    },
+    {
+      "id": 15,
+      "nombre": "LATA ISEMBECK",
+      "precio": 30600.0,
+      "descuento_pct": 1.9608,
+      "precio_final": 30000.0,
+      "stock": 24,
+      "imagen": ""
+    },
+    {
+      "id": 16,
+      "nombre": "LATA HEINEKEN",
+      "precio": 59200.0,
+      "descuento_pct": 2.027,
+      "precio_final": 58000.0,
+      "stock": 24,
+      "imagen": ""
+    },
+    {
+      "id": 17,
+      "nombre": "LATA BUDWEISER",
+      "precio": 45900.0,
+      "descuento_pct": 1.9608,
+      "precio_final": 45000.0,
+      "stock": 24,
+      "imagen": ""
+    },
+    {
+      "id": 18,
+      "nombre": "LATON BRAHMA 710",
+      "precio": 42800.0,
+      "descuento_pct": 1.8692,
+      "precio_final": 42000.0,
+      "stock": 16,
+      "imagen": ""
+    },
+    {
+      "id": 19,
+      "nombre": "LATÓN SCHNEIDER 710",
+      "precio": 59500.0,
+      "descuento_pct": 2.521,
+      "precio_final": 58000.0,
+      "stock": 24,
+      "imagen": ""
+    },
+    {
+      "id": 20,
+      "nombre": "LATÓN HEINEKEN 710",
+      "precio": 91800.0,
+      "descuento_pct": 1.9608,
+      "precio_final": 90000.0,
+      "stock": 24,
+      "imagen": ""
+    },
+    {
+      "id": 21,
+      "nombre": "LATÓN MILLER 710",
+      "precio": 79500.0,
+      "descuento_pct": 1.8868,
+      "precio_final": 78000.0,
+      "stock": 24,
+      "imagen": ""
+    },
+    {
+      "id": 22,
+      "nombre": "LATÓN QUILMES",
+      "precio": 0,
+      "descuento_pct": 2.0,
+      "precio_final": 0.0,
+      "stock": 16,
+      "imagen": ""
+    },
+    {
+      "id": 23,
+      "nombre": "LATÓN BUDW 710",
+      "precio": 42800.0,
+      "descuento_pct": 1.8692,
+      "precio_final": 42000.0,
+      "stock": 16,
+      "imagen": ""
+    },
+    {
+      "id": 24,
+      "nombre": "COCA- FAN- SPRITE 2/4",
+      "precio": 33600.0,
+      "descuento_pct": 1.7857,
+      "precio_final": 33000.0,
+      "stock": 8,
+      "imagen": ""
+    },
+    {
+      "id": 25,
+      "nombre": "COCA 2LT RETORNABLE",
+      "precio": 26000.0,
+      "descuento_pct": 1.9231,
+      "precio_final": 25500.0,
+      "stock": 9,
+      "imagen": ""
+    },
+    {
+      "id": 26,
+      "nombre": "COCA 1lt VIDRIO",
+      "precio": 29200.0,
+      "descuento_pct": 1.3699,
+      "precio_final": 28800.0,
+      "stock": 12,
+      "imagen": ""
+    },
+    {
+      "id": 27,
+      "nombre": "COCA 2,5",
+      "precio": 26000.0,
+      "descuento_pct": 1.9231,
+      "precio_final": 25500.0,
+      "stock": 6,
+      "imagen": ""
+    },
+    {
+      "id": 28,
+      "nombre": "COCA 1,75",
+      "precio": 26500.0,
+      "descuento_pct": 1.8868,
+      "precio_final": 26000.0,
+      "stock": 8,
+      "imagen": ""
+    },
+    {
+      "id": 29,
+      "nombre": "COCA zero 2/4",
+      "precio": 33800.0,
+      "descuento_pct": 2.3669,
+      "precio_final": 33000.0,
+      "stock": 8,
+      "imagen": ""
+    },
+    {
+      "id": 30,
+      "nombre": "MANAOS",
+      "precio": 8200.0,
+      "descuento_pct": 2.439,
+      "precio_final": 8000.0,
+      "stock": 6,
+      "imagen": ""
+    },
+    {
+      "id": 31,
+      "nombre": "7UP/ PEPSI 2lts",
+      "precio": 23450.0,
+      "descuento_pct": 1.919,
+      "precio_final": 23000.0,
+      "stock": 8,
+      "imagen": ""
+    },
+    {
+      "id": 32,
+      "nombre": "7UP 3lts",
+      "precio": 20400.0,
+      "descuento_pct": 1.9608,
+      "precio_final": 20000.0,
+      "stock": 6,
+      "imagen": ""
+    },
+    {
+      "id": 33,
+      "nombre": "AQUARIUS 2/4",
+      "precio": 13800.0,
+      "descuento_pct": 2.1739,
+      "precio_final": 13500.0,
+      "stock": 6,
+      "imagen": ""
+    },
+    {
+      "id": 34,
+      "nombre": "PLACER 500c",
+      "precio": 5800.0,
+      "descuento_pct": 3.4483,
+      "precio_final": 5600.0,
+      "stock": 12,
+      "imagen": ""
+    },
+    {
+      "id": 35,
+      "nombre": "PLACER 1,5",
+      "precio": 5500.0,
+      "descuento_pct": 1.8182,
+      "precio_final": 5400.0,
+      "stock": 6,
+      "imagen": ""
+    },
+    {
+      "id": 36,
+      "nombre": "BAGGIO 1lt",
+      "precio": 14790.0,
+      "descuento_pct": 1.9608,
+      "precio_final": 14500.0,
+      "stock": 8,
+      "imagen": ""
+    },
+    {
+      "id": 37,
+      "nombre": "BAGGIO 200",
+      "precio": 9000.0,
+      "descuento_pct": 2.2222,
+      "precio_final": 8800.0,
+      "stock": 18,
+      "imagen": ""
+    },
+    {
+      "id": 38,
+      "nombre": "CEPITA 1lt",
+      "precio": 11200.0,
+      "descuento_pct": 3.5714,
+      "precio_final": 10800.0,
+      "stock": 6,
+      "imagen": ""
+    },
+    {
+      "id": 39,
+      "nombre": "SODA MANAOS",
+      "precio": 7650.0,
+      "descuento_pct": 1.9608,
+      "precio_final": 7500.0,
+      "stock": 6,
+      "imagen": ""
+    },
+    {
+      "id": 40,
+      "nombre": "SODA TORASSO",
+      "precio": 7140.0,
+      "descuento_pct": 1.9608,
+      "precio_final": 7000.0,
+      "stock": 6,
+      "imagen": ""
+    },
+    {
+      "id": 41,
+      "nombre": "SODA AQUA",
+      "precio": 0,
+      "descuento_pct": 2.0,
+      "precio_final": 0.0,
+      "stock": 6,
+      "imagen": ""
+    },
+    {
+      "id": 42,
+      "nombre": "AGUA CIMES 500",
+      "precio": 2150.0,
+      "descuento_pct": 2.3256,
+      "precio_final": 2100.0,
+      "stock": 6,
+      "imagen": ""
+    },
+    {
+      "id": 43,
+      "nombre": "AGUA CIMES",
+      "precio": 3500.0,
+      "descuento_pct": 2.8571,
+      "precio_final": 3400.0,
+      "stock": 6,
+      "imagen": ""
+    },
+    {
+      "id": 44,
+      "nombre": "AGUA MANAOS gde",
+      "precio": 3900.0,
+      "descuento_pct": 2.5641,
+      "precio_final": 3800.0,
+      "stock": 6,
+      "imagen": ""
+    },
+    {
+      "id": 45,
+      "nombre": "AGUA MANAOS CHICA",
+      "precio": 4500.0,
+      "descuento_pct": 2.2222,
+      "precio_final": 4400.0,
+      "stock": 12,
+      "imagen": ""
+    },
+    {
+      "id": 46,
+      "nombre": "CUNIGTON",
+      "precio": 10000.0,
+      "descuento_pct": 2.0,
+      "precio_final": 9800.0,
+      "stock": 6,
+      "imagen": ""
+    },
+    {
+      "id": 47,
+      "nombre": "HC NARANJA",
+      "precio": 14280.0,
+      "descuento_pct": 1.9608,
+      "precio_final": 14000.0,
+      "stock": 6,
+      "imagen": ""
+    },
+    {
+      "id": 48,
+      "nombre": "COCA 500",
+      "precio": 9000.0,
+      "descuento_pct": 2.2222,
+      "precio_final": 8800.0,
+      "stock": 6,
+      "imagen": ""
+    },
+    {
+      "id": 49,
+      "nombre": "COCA LATA",
+      "precio": 7550.0,
+      "descuento_pct": 1.9868,
+      "precio_final": 7400.0,
+      "stock": 6,
+      "imagen": ""
+    },
+    {
+      "id": 50,
+      "nombre": "TERMIDOR TINTO",
+      "precio": 18360.0,
+      "descuento_pct": 0.0,
+      "precio_final": 18360.0,
+      "stock": 12,
+      "imagen": ""
+    },
+    {
+      "id": 51,
+      "nombre": "TERMIDOR BLANCO",
+      "precio": 18360.0,
+      "descuento_pct": 1.9608,
+      "precio_final": 18000.0,
+      "stock": 12,
+      "imagen": ""
+    },
+    {
+      "id": 52,
+      "nombre": "VIÑAS RIOJANAS",
+      "precio": 17340.0,
+      "descuento_pct": 1.9608,
+      "precio_final": 17000.0,
+      "stock": 12,
+      "imagen": ""
+    },
+    {
+      "id": 53,
+      "nombre": "UVITA (TODOS)",
+      "precio": 16850.0,
+      "descuento_pct": 2.0772,
+      "precio_final": 16500.0,
+      "stock": 12,
+      "imagen": ""
+    },
+    {
+      "id": 54,
+      "nombre": "PICO ORO",
+      "precio": 14280.0,
+      "descuento_pct": 1.9608,
+      "precio_final": 14000.0,
+      "stock": 12,
+      "imagen": ""
+    },
+    {
+      "id": 55,
+      "nombre": "FILOMENA",
+      "precio": 16850.0,
+      "descuento_pct": 2.0772,
+      "precio_final": 16500.0,
+      "stock": 6,
+      "imagen": ""
+    },
+    {
+      "id": 56,
+      "nombre": "MICHEL TORINO",
+      "precio": 10750.0,
+      "descuento_pct": 2.3256,
+      "precio_final": 10500.0,
+      "stock": 6,
+      "imagen": ""
+    },
+    {
+      "id": 57,
+      "nombre": "TAREA FINA",
+      "precio": 12750.0,
+      "descuento_pct": 1.9608,
+      "precio_final": 12500.0,
+      "stock": 6,
+      "imagen": ""
+    },
+    {
+      "id": 58,
+      "nombre": "ENCEPADO",
+      "precio": 16320.0,
+      "descuento_pct": 1.9608,
+      "precio_final": 16000.0,
+      "stock": 6,
+      "imagen": ""
+    },
+    {
+      "id": 59,
+      "nombre": "DON VALENTIN",
+      "precio": 17340.0,
+      "descuento_pct": 1.9608,
+      "precio_final": 17000.0,
+      "stock": 6,
+      "imagen": ""
+    },
+    {
+      "id": 60,
+      "nombre": "CABARCENO",
+      "precio": 16850.0,
+      "descuento_pct": 2.0772,
+      "precio_final": 16500.0,
+      "stock": 6,
+      "imagen": ""
+    },
+    {
+      "id": 61,
+      "nombre": "ALMA MORA",
+      "precio": 26500.0,
+      "descuento_pct": 1.8868,
+      "precio_final": 26000.0,
+      "stock": 6,
+      "imagen": ""
+    },
+    {
+      "id": 62,
+      "nombre": "DADA",
+      "precio": 26500.0,
+      "descuento_pct": 1.8868,
+      "precio_final": 26000.0,
+      "stock": 6,
+      "imagen": ""
+    },
+    {
+      "id": 63,
+      "nombre": "VIÑAS DE ALVEAR",
+      "precio": 14890.0,
+      "descuento_pct": 1.9476,
+      "precio_final": 14600.0,
+      "stock": 6,
+      "imagen": ""
+    },
+    {
+      "id": 64,
+      "nombre": "VIÑA de BALBO",
+      "precio": 14280.0,
+      "descuento_pct": 1.9608,
+      "precio_final": 14000.0,
+      "stock": 6,
+      "imagen": ""
+    },
+    {
+      "id": 65,
+      "nombre": "SANTA JULIA BCO",
+      "precio": 47000.0,
+      "descuento_pct": -2.1277,
+      "precio_final": 48000.0,
+      "stock": 6,
+      "imagen": ""
+    },
+    {
+      "id": 66,
+      "nombre": "VERSUS BCO DULCE",
+      "precio": 17500.0,
+      "descuento_pct": 2.8571,
+      "precio_final": 17000.0,
+      "stock": 6,
+      "imagen": ""
+    },
+    {
+      "id": 67,
+      "nombre": "FEDERICO",
+      "precio": 25500.0,
+      "descuento_pct": 1.9608,
+      "precio_final": 25000.0,
+      "stock": 6,
+      "imagen": ""
+    },
+    {
+      "id": 68,
+      "nombre": "FRIZZE litro",
+      "precio": 14280.0,
+      "descuento_pct": 1.9608,
+      "precio_final": 14000.0,
+      "stock": 6,
+      "imagen": ""
+    },
+    {
+      "id": 69,
+      "nombre": "CHANDON",
+      "precio": 91800.0,
+      "descuento_pct": 1.9608,
+      "precio_final": 90000.0,
+      "stock": 6,
+      "imagen": ""
+    },
+    {
+      "id": 70,
+      "nombre": "TORO BCO",
+      "precio": 10500.0,
+      "descuento_pct": 6.6667,
+      "precio_final": 9800.0,
+      "stock": 6,
+      "imagen": ""
+    },
+    {
+      "id": 71,
+      "nombre": "DR LEMON",
+      "precio": 35700.0,
+      "descuento_pct": 1.9608,
+      "precio_final": 35000.0,
+      "stock": 12,
+      "imagen": ""
+    },
+    {
+      "id": 72,
+      "nombre": "LATA DR LEMON",
+      "precio": 48960.0,
+      "descuento_pct": 1.9608,
+      "precio_final": 48000.0,
+      "stock": 24,
+      "imagen": ""
+    },
+    {
+      "id": 73,
+      "nombre": "BRANCA 450",
+      "precio": 11500.0,
+      "descuento_pct": 2.6087,
+      "precio_final": 11200.0,
+      "stock": 1,
+      "imagen": ""
+    },
+    {
+      "id": 74,
+      "nombre": "BRANCA 750",
+      "precio": 16800.0,
+      "descuento_pct": 1.7857,
+      "precio_final": 16500.0,
+      "stock": 1,
+      "imagen": ""
+    },
+    {
+      "id": 75,
+      "nombre": "BRANCA LITRO",
+      "precio": 22950.0,
+      "descuento_pct": 1.9608,
+      "precio_final": 22500.0,
+      "stock": 1,
+      "imagen": ""
+    },
+    {
+      "id": 76,
+      "nombre": "SPEED GDE",
+      "precio": 25500.0,
+      "descuento_pct": 1.9608,
+      "precio_final": 25000.0,
+      "stock": 12,
+      "imagen": ""
+    },
+    {
+      "id": 77,
+      "nombre": "SPEED CHICO",
+      "precio": 29580.0,
+      "descuento_pct": 1.9608,
+      "precio_final": 29000.0,
+      "stock": 24,
+      "imagen": ""
+    },
+    {
+      "id": 78,
+      "nombre": "MONSTER",
+      "precio": 14500.0,
+      "descuento_pct": 2.069,
+      "precio_final": 14200.0,
+      "stock": 6,
+      "imagen": ""
+    },
+    {
+      "id": 79,
+      "nombre": "SMIRNOFF SABORIZADO",
+      "precio": 8400.0,
+      "descuento_pct": 2.381,
+      "precio_final": 8200.0,
+      "stock": 1,
+      "imagen": ""
+    },
+    {
+      "id": 80,
+      "nombre": "SMIRNOFF COMÚN",
+      "precio": 8000.0,
+      "descuento_pct": 2.5,
+      "precio_final": 7800.0,
+      "stock": 1,
+      "imagen": ""
+    },
+    {
+      "id": 81,
+      "nombre": "SKY SABORIZADO",
+      "precio": 9500.0,
+      "descuento_pct": 3.1579,
+      "precio_final": 9200.0,
+      "stock": 1,
+      "imagen": ""
+    },
+    {
+      "id": 82,
+      "nombre": "SKY COMÚN",
+      "precio": 8200.0,
+      "descuento_pct": 2.439,
+      "precio_final": 8000.0,
+      "stock": 1,
+      "imagen": ""
+    },
+    {
+      "id": 83,
+      "nombre": "SKY COSMIC",
+      "precio": 9800.0,
+      "descuento_pct": 3.0612,
+      "precio_final": 9500.0,
+      "stock": 1,
+      "imagen": ""
+    },
+    {
+      "id": 84,
+      "nombre": "SIDRA 1888",
+      "precio": 61200.0,
+      "descuento_pct": 1.9608,
+      "precio_final": 60000.0,
+      "stock": 6,
+      "imagen": ""
+    },
+    {
+      "id": 85,
+      "nombre": "SIDRA DEL VALLE",
+      "precio": 16320.0,
+      "descuento_pct": 1.9608,
+      "precio_final": 16000.0,
+      "stock": 6,
+      "imagen": ""
+    },
+    {
+      "id": 86,
+      "nombre": "PULPA LATA",
+      "precio": 4590.0,
+      "descuento_pct": 1.9608,
+      "precio_final": 4500.0,
+      "stock": 1,
+      "imagen": ""
+    },
+    {
+      "id": 87,
+      "nombre": "JAGGER",
+      "precio": 0,
+      "descuento_pct": 2.0,
+      "precio_final": 0.0,
+      "stock": 1,
+      "imagen": ""
+    },
+    {
+      "id": 88,
+      "nombre": "ABSOLUT",
+      "precio": 25500.0,
+      "descuento_pct": 1.9608,
+      "precio_final": 25000.0,
+      "stock": 1,
+      "imagen": ""
+    },
+    {
+      "id": 89,
+      "nombre": "PETACA w",
+      "precio": 38760.0,
+      "descuento_pct": 1.9608,
+      "precio_final": 38000.0,
+      "stock": 24,
+      "imagen": ""
+    },
+    {
+      "id": 90,
+      "nombre": "PETACA KUSENIER",
+      "precio": 48960.0,
+      "descuento_pct": 1.9608,
+      "precio_final": 48000.0,
+      "stock": 24,
+      "imagen": ""
+    },
+    {
+      "id": 91,
+      "nombre": "PETACA CRIADORES",
+      "precio": 25000.0,
+      "descuento_pct": 2.0,
+      "precio_final": 24500.0,
+      "stock": 12,
+      "imagen": ""
+    },
+    {
+      "id": 92,
+      "nombre": "PETAKON (café, dulce, choco)",
+      "precio": 18500.0,
+      "descuento_pct": 2.7027,
+      "precio_final": 18000.0,
+      "stock": 12,
+      "imagen": ""
+    },
+    {
+      "id": 93,
+      "nombre": "WISKY JACK DANIELS",
+      "precio": 36000.0,
+      "descuento_pct": 2.0,
+      "precio_final": 35280.0,
+      "stock": 1,
+      "imagen": ""
+    },
+    {
+      "id": 94,
+      "nombre": "WISKY BALLENTINE'S",
+      "precio": 24000.0,
+      "descuento_pct": 2.0,
+      "precio_final": 23520.0,
+      "stock": 1,
+      "imagen": ""
+    },
+    {
+      "id": 95,
+      "nombre": "W LITRO",
+      "precio": 6000.0,
+      "descuento_pct": 3.3333,
+      "precio_final": 5800.0,
+      "stock": 1,
+      "imagen": ""
+    },
+    {
+      "id": 96,
+      "nombre": "KUSENIER LITRO",
+      "precio": 6650.0,
+      "descuento_pct": 2.2556,
+      "precio_final": 6500.0,
+      "stock": 1,
+      "imagen": ""
+    },
+    {
+      "id": 97,
+      "nombre": "MARIPOSA",
+      "precio": 6120.0,
+      "descuento_pct": 1.9608,
+      "precio_final": 6000.0,
+      "stock": 1,
+      "imagen": ""
+    },
+    {
+      "id": 98,
+      "nombre": "LEGUI",
+      "precio": 6650.0,
+      "descuento_pct": 2.2556,
+      "precio_final": 6500.0,
+      "stock": 1,
+      "imagen": ""
+    },
+    {
+      "id": 99,
+      "nombre": "GINEBRA",
+      "precio": 7650.0,
+      "descuento_pct": 1.9608,
+      "precio_final": 7500.0,
+      "stock": 1,
+      "imagen": ""
+    },
+    {
+      "id": 100,
+      "nombre": "GIN GORDON",
+      "precio": 12750.0,
+      "descuento_pct": 1.9608,
+      "precio_final": 12500.0,
+      "stock": 1,
+      "imagen": ""
+    },
+    {
+      "id": 101,
+      "nombre": "LATA FERNET 1882",
+      "precio": 12240.0,
+      "descuento_pct": 1.9608,
+      "precio_final": 12000.0,
+      "stock": 6,
+      "imagen": ""
+    },
+    {
+      "id": 102,
+      "nombre": "FERNET 1882",
+      "precio": 9200.0,
+      "descuento_pct": 3.2609,
+      "precio_final": 8900.0,
+      "stock": 1,
+      "imagen": ""
+    },
+    {
+      "id": 103,
+      "nombre": "GANCIA",
+      "precio": 6550.0,
+      "descuento_pct": 2.2901,
+      "precio_final": 6400.0,
+      "stock": 1,
+      "imagen": ""
+    },
+    {
+      "id": 104,
+      "nombre": "WHITE HORSE",
+      "precio": 14800.0,
+      "descuento_pct": 2.027,
+      "precio_final": 14500.0,
+      "stock": 1,
+      "imagen": ""
+    },
+    {
+      "id": 105,
+      "nombre": "BLACK LEBEL",
+      "precio": 0,
+      "descuento_pct": 2.0,
+      "precio_final": 0.0,
+      "stock": 1,
+      "imagen": ""
+    },
+    {
+      "id": 106,
+      "nombre": "CRIADORES LITRO",
+      "precio": 8200.0,
+      "descuento_pct": 2.439,
+      "precio_final": 8000.0,
+      "stock": 1,
+      "imagen": ""
+    },
+    {
+      "id": 107,
+      "nombre": "CINZANO",
+      "precio": 7950.0,
+      "descuento_pct": 1.8868,
+      "precio_final": 7800.0,
+      "stock": 1,
+      "imagen": ""
+    },
+    {
+      "id": 108,
+      "nombre": "FERNET CAPRI",
+      "precio": 3570.0,
+      "descuento_pct": 1.9608,
+      "precio_final": 3500.0,
+      "stock": 1,
+      "imagen": ""
+    },
+    {
+      "id": 109,
+      "nombre": "CAMPARI",
+      "precio": 10600.0,
+      "descuento_pct": 1.8868,
+      "precio_final": 10400.0,
+      "stock": 1,
+      "imagen": ""
+    },
+    {
+      "id": 110,
+      "nombre": "Aperol",
+      "precio": 0,
+      "descuento_pct": 2.0,
+      "precio_final": 0.0,
+      "stock": 1,
+      "imagen": ""
+    },
+    {
+      "id": 111,
+      "nombre": "FERNANDO",
+      "precio": 5600.0,
+      "descuento_pct": 1.7857,
+      "precio_final": 5500.0,
+      "stock": 6,
+      "imagen": ""
+    },
+    {
+      "id": 112,
+      "nombre": "DOBLE COLA",
+      "precio": 9100.0,
+      "descuento_pct": 2.1978,
+      "precio_final": 8900.0,
+      "stock": 6,
+      "imagen": ""
+    },
+    {
+      "id": 113,
+      "nombre": "CERVEZA DESCARTABLE 361",
+      "precio": 10200.0,
+      "descuento_pct": 2.9412,
+      "precio_final": 9900.0,
+      "stock": 6,
+      "imagen": ""
+    },
+    {
+      "id": 114,
+      "nombre": "PRITTY",
+      "precio": 12500.0,
+      "descuento_pct": -3.2,
+      "precio_final": 12900.0,
+      "stock": 6,
+      "imagen": ""
+    },
+    {
+      "id": 115,
+      "nombre": "TANG",
+      "precio": 5750.0,
+      "descuento_pct": 2.6087,
+      "precio_final": 5600.0,
+      "stock": 20,
+      "imagen": ""
+    },
+    {
+      "id": 116,
+      "nombre": "CLIGHT",
+      "precio": 6320.0,
+      "descuento_pct": 1.8987,
+      "precio_final": 6200.0,
+      "stock": 20,
+      "imagen": ""
+    },
+    {
+      "id": 117,
+      "nombre": "RINDE 2",
+      "precio": 4900.0,
+      "descuento_pct": 2.0408,
+      "precio_final": 4800.0,
+      "stock": 10,
+      "imagen": ""
+    },
+    {
+      "id": 118,
+      "nombre": "LATA MANAOS",
+      "precio": 5000.0,
+      "descuento_pct": 6.0,
+      "precio_final": 4700.0,
+      "stock": 6,
+      "imagen": ""
+    },
+    {
+      "id": 119,
+      "nombre": "LATA SMIRNOF",
+      "precio": 65280.0,
+      "descuento_pct": 1.9608,
+      "precio_final": 64000.0,
+      "stock": 24,
+      "imagen": ""
+    },
+    {
+      "id": 120,
+      "nombre": "LATA PRONTO",
+      "precio": 0,
+      "descuento_pct": 2.0,
+      "precio_final": 0.0,
+      "stock": 6,
+      "imagen": ""
+    },
+    {
+      "id": 121,
+      "nombre": "LATA GANCIA",
+      "precio": 14280.0,
+      "descuento_pct": 1.9608,
+      "precio_final": 14000.0,
+      "stock": 6,
+      "imagen": ""
+    },
+    {
+      "id": 122,
+      "nombre": "LATA FRIZZE",
+      "precio": 0,
+      "descuento_pct": 2.0,
+      "precio_final": 0.0,
+      "stock": 6,
+      "imagen": ""
+    },
+    {
+      "id": 123,
+      "nombre": "RED POINT",
+      "precio": 16850.0,
+      "descuento_pct": 2.0772,
+      "precio_final": 16500.0,
+      "stock": 10,
+      "imagen": ""
+    },
+    {
+      "id": 124,
+      "nombre": "RED POINT box",
+      "precio": 17850.0,
+      "descuento_pct": 1.9608,
+      "precio_final": 17500.0,
+      "stock": 10,
+      "imagen": ""
+    },
+    {
+      "id": 125,
+      "nombre": "RED POINT 10",
+      "precio": 10400.0,
+      "descuento_pct": 1.9231,
+      "precio_final": 10200.0,
+      "stock": 10,
+      "imagen": ""
+    },
+    {
+      "id": 126,
+      "nombre": "RED POINT ON/ SIX",
+      "precio": 19380.0,
+      "descuento_pct": 1.9608,
+      "precio_final": 19000.0,
+      "stock": 10,
+      "imagen": ""
+    },
+    {
+      "id": 127,
+      "nombre": "RED On x10",
+      "precio": 11220.0,
+      "descuento_pct": 1.9608,
+      "precio_final": 11000.0,
+      "stock": 10,
+      "imagen": ""
+    },
+    {
+      "id": 128,
+      "nombre": "MASTER",
+      "precio": 14790.0,
+      "descuento_pct": 1.9608,
+      "precio_final": 14500.0,
+      "stock": 10,
+      "imagen": ""
+    },
+    {
+      "id": 129,
+      "nombre": "PAPELILLOS OCB",
+      "precio": 870.0,
+      "descuento_pct": 2.2989,
+      "precio_final": 850.0,
+      "stock": 1,
+      "imagen": ""
+    },
+    {
+      "id": 130,
+      "nombre": "DOLCHESTER",
+      "precio": 14790.0,
+      "descuento_pct": 1.9608,
+      "precio_final": 14500.0,
+      "stock": 10,
+      "imagen": ""
+    },
+    {
+      "id": 131,
+      "nombre": "MELBOURNE",
+      "precio": 0,
+      "descuento_pct": 2.0,
+      "precio_final": 0.0,
+      "stock": 10,
+      "imagen": ""
+    },
+    {
+      "id": 132,
+      "nombre": "Kiel",
+      "precio": 14280.0,
+      "descuento_pct": 1.9608,
+      "precio_final": 14000.0,
+      "stock": 10,
+      "imagen": ""
+    },
+    {
+      "id": 133,
+      "nombre": "ENCENDEDOR MAGIC",
+      "precio": 3800.0,
+      "descuento_pct": 7.8947,
+      "precio_final": 3500.0,
+      "stock": 15,
+      "imagen": ""
+    },
+    {
+      "id": 134,
+      "nombre": "ENCENDEDOR CANDELA",
+      "precio": 7140.0,
+      "descuento_pct": 1.9608,
+      "precio_final": 7000.0,
+      "stock": 25,
+      "imagen": ""
+    },
+    {
+      "id": 135,
+      "nombre": "CARBÓN CHICO",
+      "precio": 3060.0,
+      "descuento_pct": 1.9608,
+      "precio_final": 3000.0,
+      "stock": 1,
+      "imagen": ""
+    },
+    {
+      "id": 136,
+      "nombre": "CARBÓN GDE SAMIRA",
+      "precio": 4500.0,
+      "descuento_pct": 2.2222,
+      "precio_final": 4400.0,
+      "stock": 1,
+      "imagen": ""
+    },
+    {
+      "id": 137,
+      "nombre": "CARBÓN PAPEL",
+      "precio": 5100.0,
+      "descuento_pct": 1.9608,
+      "precio_final": 5000.0,
+      "stock": 1,
+      "imagen": ""
+    },
+    {
+      "id": 138,
+      "nombre": "LEÑA",
+      "precio": 4900.0,
+      "descuento_pct": 0.0,
+      "precio_final": 4900.0,
+      "stock": 1,
+      "imagen": ""
+    },
+    {
+      "id": 139,
+      "nombre": "ENVASE",
+      "precio": 2040.82,
+      "descuento_pct": 2.0002,
+      "precio_final": 2000.0,
+      "stock": 1,
+      "imagen": ""
+    },
+    {
+      "id": 140,
+      "nombre": "ROLLO esplendor",
+      "precio": 11200.0,
+      "descuento_pct": 2.6786,
+      "precio_final": 10900.0,
+      "stock": 8,
+      "imagen": ""
+    },
+    {
+      "id": 141,
+      "nombre": "HIGIÉNICO SUELTO",
+      "precio": 4200.0,
+      "descuento_pct": 4.7619,
+      "precio_final": 4000.0,
+      "stock": 30,
+      "imagen": ""
+    },
+    {
+      "id": 142,
+      "nombre": "HIGIÉNICO felpita",
+      "precio": 15800.0,
+      "descuento_pct": 1.8987,
+      "precio_final": 15500.0,
+      "stock": 12,
+      "imagen": ""
+    },
+    {
+      "id": 143,
+      "nombre": "HIGIÉNICO COMBOY",
+      "precio": 14800.0,
+      "descuento_pct": 2.027,
+      "precio_final": 14500.0,
+      "stock": 10,
+      "imagen": ""
+    },
+    {
+      "id": 144,
+      "nombre": "ROLLO COCINA",
+      "precio": 0,
+      "descuento_pct": 2.0,
+      "precio_final": 0.0,
+      "stock": 0,
+      "imagen": ""
+    },
+    {
+      "id": 145,
+      "nombre": "BOLSA PAPÁ NEGRA",
+      "precio": 22500.0,
+      "descuento_pct": 11.1111,
+      "precio_final": 20000.0,
+      "stock": 15,
+      "imagen": ""
+    },
+    {
+      "id": 146,
+      "nombre": "BOLSA PAPÁ BCA",
+      "precio": 24489.8,
+      "descuento_pct": 2.0,
+      "precio_final": 24000.0,
+      "stock": 0,
+      "imagen": ""
+    },
+    {
+      "id": 147,
+      "nombre": "BOLSA CEBOLLA",
+      "precio": 32600.0,
+      "descuento_pct": 2.0,
+      "precio_final": 31948.0,
+      "stock": 15,
+      "imagen": ""
+    },
+    {
+      "id": 148,
+      "nombre": "KRACHITOS PAPÁ FRITA",
+      "precio": 6800.0,
+      "descuento_pct": 4.4118,
+      "precio_final": 6500.0,
+      "stock": 275,
+      "imagen": ""
+    },
+    {
+      "id": 149,
+      "nombre": "KRACHITOS CHIZITOS",
+      "precio": 4400.0,
+      "descuento_pct": 4.5455,
+      "precio_final": 4200.0,
+      "stock": 330,
+      "imagen": ""
+    },
+    {
+      "id": 150,
+      "nombre": "KRACHITOS BASTONITOS",
+      "precio": 4400.0,
+      "descuento_pct": 4.5455,
+      "precio_final": 4200.0,
+      "stock": 240,
+      "imagen": ""
+    }
+  ]
+}

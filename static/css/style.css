@@ -164,6 +164,83 @@ form input, form select {
     width: 90px;
     padding: 5px;
 }
+
+.admin-table input[readonly] {
+    background: #edf1f2;
+    color: #59666b;
+}
+
+.badge-descuento,
+.badge-efectivo {
+    display: inline-block;
+    width: fit-content;
+    margin: 3px 0;
+    padding: 5px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.badge-descuento {
+    background: #e8f6ee;
+    color: #176b3a;
+}
+
+.badge-efectivo {
+    background: #fff3d6;
+    color: #805600;
+}
+
+.selector-cantidad {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 10px 0;
+}
+
+.selector-cantidad button {
+    width: 36px;
+    height: 36px;
+    border: 1px solid #cbd3d6;
+    border-radius: 4px;
+    background: #fff;
+    color: #263238;
+    cursor: pointer;
+    font-size: 20px;
+}
+
+.selector-cantidad button:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.selector-cantidad input {
+    width: 64px;
+    margin: 0;
+    text-align: center;
+}
+
+.selector-carrito {
+    justify-content: flex-start;
+}
+
+.selector-carrito span {
+    min-width: 24px;
+    text-align: center;
+}
+
+.cart-item {
+    padding: 10px 0;
+    border-bottom: 1px solid #e1e5e7;
+}
+
+.total-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 8px 0;
+}
 /* Estilos adicionales */
 .nota-pago {
     font-size: 13px;

@@ -1,3 +1,5 @@
+import csv
+import json
 import os
 from functools import wraps
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
@@ -5,20 +7,101 @@ from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('FLASK_SECRET_KEY', 'distribuidora-dev-secret-key-change-me')
+app.config['PRODUCTS_CSV'] = os.path.join(os.path.dirname(__file__), 'productos_7soles.csv')
+app.config['PRODUCTS_STORE'] = os.environ.get(
+    'PRODUCTS_STORE_PATH',
+    os.path.join(os.path.dirname(__file__), '.productos_7soles.json')
+)
 ADMIN_USERNAME = 'guille1901'
 ADMIN_PASSWORD = 'casla127'
+CASH_DISCOUNT_PERCENT = 2
 
 # Configuración para subida de imágenes
 UPLOAD_FOLDER = os.path.join('static', 'uploads')
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# Base de datos en memoria
-bebidas = [
-    {"id": 1, "nombre": "Cerveza Quilmes 1L", "precio": 2500, "stock": 50, "imagen": ""},
-    {"id": 2, "nombre": "Fernet Branca 750ml", "precio": 8500, "stock": 20, "imagen": ""},
-    {"id": 3, "nombre": "Coca-Cola 2.25L", "precio": 3100, "stock": 35, "imagen": ""}
-]
+def numero_opcional(valor):
+    try:
+        return float(valor) if valor not in (None, '') else None
+    except (TypeError, ValueError):
+        return None
+
+
+def precio_con_descuento(precio, descuento_pct):
+    return round(float(precio) * (1 - float(descuento_pct) / 100), 2)
+
+
+csv_catalogo_mtime_ns = None
+
+
+def cargar_catalogo_csv():
+    productos = []
+    with open(app.config['PRODUCTS_CSV'], newline='', encoding='utf-8-sig') as archivo:
+        for producto_id, fila in enumerate(csv.DictReader(archivo), start=1):
+            precio = numero_opcional(fila.get('precio'))
+            precio_efectivo = numero_opcional(fila.get('desc_efectivo'))
+            descuento_pct = numero_opcional(fila.get('descuento_efectivo_pct')) or 0
+
+            if precio is None and precio_efectivo is not None:
+                if 0 <= descuento_pct < 100:
+                    precio = round(precio_efectivo / (1 - descuento_pct / 100), 2)
+                else:
+                    precio = precio_efectivo
+            precio = round(precio or 0, 2)
+
+            if precio > 0 and precio_efectivo is not None:
+                descuento_pct = round((1 - precio_efectivo / precio) * 100, 4)
+                precio_final = round(precio_efectivo, 2)
+            else:
+                descuento_pct = max(0, min(float(descuento_pct), 99.99))
+                precio_final = precio_con_descuento(precio, descuento_pct)
+
+            cantidad = numero_opcional(fila.get('cantidad')) or 0
+            productos.append({
+                'id': producto_id,
+                'nombre': (fila.get('producto') or '').strip(),
+                'precio': precio,
+                'descuento_pct': descuento_pct,
+                'precio_final': precio_final,
+                'stock': max(0, int(cantidad)),
+                'imagen': ''
+            })
+    return productos
+
+
+def guardar_catalogo(productos=None, csv_mtime_ns=None):
+    contenido = {
+        'csv_mtime_ns': csv_mtime_ns if csv_mtime_ns is not None else csv_catalogo_mtime_ns,
+        'bebidas': productos if productos is not None else bebidas
+    }
+    temporal = f"{app.config['PRODUCTS_STORE']}.tmp"
+    with open(temporal, 'w', encoding='utf-8') as archivo:
+        json.dump(contenido, archivo, ensure_ascii=False, indent=2)
+    os.replace(temporal, app.config['PRODUCTS_STORE'])
+
+
+def inicializar_catalogo():
+    global csv_catalogo_mtime_ns
+    csv_mtime_ns = os.stat(app.config['PRODUCTS_CSV']).st_mtime_ns
+    ruta_store = app.config['PRODUCTS_STORE']
+    if os.path.isfile(ruta_store):
+        try:
+            with open(ruta_store, encoding='utf-8') as archivo:
+                guardado = json.load(archivo)
+            if guardado.get('csv_mtime_ns') == csv_mtime_ns and isinstance(guardado.get('bebidas'), list):
+                csv_catalogo_mtime_ns = csv_mtime_ns
+                return guardado['bebidas']
+        except (OSError, json.JSONDecodeError):
+            pass
+
+    productos = cargar_catalogo_csv()
+    csv_catalogo_mtime_ns = csv_mtime_ns
+    guardar_catalogo(productos, csv_mtime_ns)
+    return productos
+
+
+bebidas = inicializar_catalogo()
 
 pedidos = []
 contador_pedidos = 1
@@ -36,15 +119,48 @@ def cliente_index():
 @app.route('/api/bebidas', methods=['GET'])
 def get_bebidas():
     return jsonify([
-        {**bebida, "disponible": bebida["stock"] > 0}
+        {**bebida, "disponible": bebida["stock"] > 0 and bebida["precio_final"] > 0}
         for bebida in bebidas
     ])
 
 @app.route('/api/pedidos/crear', methods=['POST'])
 def crear_pedido():
     global contador_pedidos
-    data = request.json
-    
+    data = request.json or {}
+    productos_por_id = {producto['id']: producto for producto in bebidas}
+    cantidades = {}
+    try:
+        for item in data.get('items', []):
+            producto_id = int(item.get('id'))
+            cantidad = int(item.get('cantidad'))
+            if cantidad < 1 or producto_id not in productos_por_id:
+                raise ValueError
+            cantidades[producto_id] = cantidades.get(producto_id, 0) + cantidad
+    except (AttributeError, TypeError, ValueError):
+        return jsonify({"status": "error", "mensaje": "Detalle del pedido inválido"}), 400
+
+    if not cantidades:
+        return jsonify({"status": "error", "mensaje": "El pedido no tiene productos"}), 400
+
+    items_pedido = []
+    subtotal = 0
+    for producto_id, cantidad in cantidades.items():
+        producto = productos_por_id[producto_id]
+        if cantidad > producto['stock']:
+            return jsonify({"status": "error", "mensaje": f"Stock insuficiente para {producto['nombre']}"}), 409
+        precio_unitario = producto['precio_final']
+        total_item = round(precio_unitario * cantidad, 2)
+        subtotal += total_item
+        items_pedido.append({
+            'id': producto_id,
+            'nombre': producto['nombre'],
+            'cantidad': cantidad,
+            'precio_unitario': precio_unitario,
+            'total': total_item
+        })
+
+    subtotal = round(subtotal, 2)
+    descuento_efectivo = round(subtotal * CASH_DISCOUNT_PERCENT / 100, 2) if data.get('metodoPago') == 'Efectivo' else 0
     nuevo_pedido = {
         "id": contador_pedidos,
         "cliente": data.get("nombre"),
@@ -52,8 +168,10 @@ def crear_pedido():
         "entrega": data.get("entrega"),
         "direccion": data.get("direccion"),
         "metodoPago": data.get("metodoPago"),
-        "items": data.get("items", []),
-        "total": data.get("total"),
+        "items": items_pedido,
+        "subtotal": subtotal,
+        "descuento_efectivo": descuento_efectivo,
+        "total": round(subtotal - descuento_efectivo, 2),
         "estado": "Pendiente",
         "motivo_rechazo": ""
     }
@@ -62,7 +180,7 @@ def crear_pedido():
     p_id = contador_pedidos
     contador_pedidos += 1
     
-    return jsonify({"status": "ok", "pedido_id": p_id})
+    return jsonify({"status": "ok", "pedido_id": p_id, "total": nuevo_pedido['total']})
 
 @app.route('/api/pedidos/estado/<int:pedido_id>', methods=['GET'])
 def consultar_estado_pedido(pedido_id):
@@ -125,9 +243,12 @@ def admin_get_pedidos():
 @app.route('/api/admin/agregar_producto', methods=['POST'])
 @admin_required
 def agregar_producto():
-    nombre = request.form.get('nombre')
-    precio = float(request.form.get('precio', 0))
-    stock = int(request.form.get('stock', 0))
+    nombre = (request.form.get('nombre') or '').strip()
+    precio = numero_opcional(request.form.get('precio'))
+    descuento_pct = numero_opcional(request.form.get('descuento_pct'))
+    stock = numero_opcional(request.form.get('stock'))
+    if not nombre or precio is None or precio < 0 or descuento_pct is None or not 0 <= descuento_pct < 100 or stock is None or stock < 0:
+        return jsonify({"status": "error", "mensaje": "Revise nombre, precio, descuento y stock"}), 400
     imagen = request.files.get('imagen')
 
     nombre_imagen = ""
@@ -139,25 +260,37 @@ def agregar_producto():
     nueva_bebida = {
         "id": nuevo_id,
         "nombre": nombre,
-        "precio": precio,
-        "stock": stock,
+        "precio": round(precio, 2),
+        "descuento_pct": round(descuento_pct, 4),
+        "precio_final": precio_con_descuento(precio, descuento_pct),
+        "stock": int(stock),
         "imagen": nombre_imagen
     }
     bebidas.append(nueva_bebida)
+    guardar_catalogo()
     return jsonify({"status": "ok", "mensaje": "Producto agregado"})
 
 @app.route('/api/admin/actualizar_producto', methods=['POST'])
 @admin_required
 def actualizar_producto():
-    data = request.json
-    p_id = int(data.get('id'))
-    nuevo_precio = float(data.get('precio'))
-    nuevo_stock = int(data.get('stock'))
+    data = request.json or {}
+    try:
+        p_id = int(data.get('id'))
+        nuevo_precio = float(data.get('precio'))
+        descuento_pct = float(data.get('descuento_pct'))
+        nuevo_stock = int(data.get('stock'))
+    except (TypeError, ValueError):
+        return jsonify({"status": "error", "mensaje": "Precio, descuento o stock inválido"}), 400
+    if nuevo_precio < 0 or not 0 <= descuento_pct < 100 or nuevo_stock < 0:
+        return jsonify({"status": "error", "mensaje": "Precio, descuento o stock fuera de rango"}), 400
 
     for b in bebidas:
         if b['id'] == p_id:
-            b['precio'] = nuevo_precio
+            b['precio'] = round(nuevo_precio, 2)
+            b['descuento_pct'] = round(descuento_pct, 4)
+            b['precio_final'] = precio_con_descuento(nuevo_precio, descuento_pct)
             b['stock'] = nuevo_stock
+            guardar_catalogo()
             return jsonify({"status": "ok", "mensaje": "Producto actualizado"})
     return jsonify({"status": "error", "mensaje": "Producto no encontrado"}), 404
 
@@ -177,8 +310,21 @@ def eliminar_producto():
                 image_path = os.path.join(app.config['UPLOAD_FOLDER'], os.path.basename(bebida['imagen']))
                 if os.path.isfile(image_path):
                     os.remove(image_path)
+                    guardar_catalogo()
             return jsonify({"status": "ok", "mensaje": "Producto eliminado"})
     return jsonify({"status": "error", "mensaje": "Producto no encontrado"}), 404
+
+@app.route('/api/admin/sincronizar_csv', methods=['POST'])
+@admin_required
+def sincronizar_csv():
+    global bebidas, csv_catalogo_mtime_ns
+    try:
+        bebidas = cargar_catalogo_csv()
+        csv_catalogo_mtime_ns = os.stat(app.config['PRODUCTS_CSV']).st_mtime_ns
+        guardar_catalogo()
+    except (OSError, csv.Error) as error:
+        return jsonify({"status": "error", "mensaje": f"No se pudo importar el CSV: {error}"}), 500
+    return jsonify({"status": "ok", "cantidad": len(bebidas), "mensaje": "Catálogo sincronizado desde el CSV"})
 
 @app.route('/api/admin/toggle_delivery', methods=['POST'])
 @admin_required

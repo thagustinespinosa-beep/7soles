@@ -32,9 +32,9 @@
             <h2>Tu Pedido</h2>
             <div id="carrito-items"></div>
             <hr>
-            <div class="total-row">
-                <strong>Total:</strong> $<span id="total-precio">0</span>
-            </div>
+            <div class="total-row"><strong>Subtotal:</strong> $<span id="subtotal-precio">0.00</span></div>
+            <p id="descuento-efectivo-fila" class="nota-pago hidden">Descuento en efectivo (2%): −$<span id="descuento-efectivo">0.00</span></p>
+            <div class="total-row"><strong>Total:</strong> $<span id="total-precio">0.00</span></div>
 
             <form id="form-pedido" onsubmit="enviarPedido(event)">
                 <h3>Datos del Pedido</h3>
@@ -61,7 +61,7 @@
                 </div>
 
                 <label>Método de Pago:</label>
-                <select id="metodo-pago" required>
+                <select id="metodo-pago" onchange="actualizarCarritoUI()" required>
                     <option value="Mercado Pago">Mercado Pago (Billetera Virtual)</option>
                     <option value="Efectivo">Efectivo</option>
                 </select>
@@ -76,11 +76,25 @@
     <script>
         let catalog = [];
         let carrito = [];
+        const cantidadesSeleccionadas = {};
+
+        function escaparHtml(valor) {
+            return String(valor).replace(/[&<>"']/g, caracter => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[caracter]));
+        }
+
+        function formatoMoneda(valor) {
+            return Number(valor || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
 
         async function cargarCatalogo() {
             try {
                 const res = await fetch('/api/bebidas', { cache: 'no-store' });
                 catalog = await res.json();
+                carrito = carrito.map(item => {
+                    const actualizado = catalog.find(producto => producto.id === item.id);
+                    return actualizado ? { ...actualizado, cantidad: Math.min(item.cantidad, actualizado.stock) } : null;
+                }).filter(item => item && item.cantidad > 0);
+                actualizarCarritoUI();
                 const query = document.getElementById('buscar-input').value.toLowerCase();
                 renderCatalogo(catalog.filter(b => b.nombre.toLowerCase().includes(query)));
             } catch (err) {
@@ -100,19 +114,29 @@
             lista.forEach(item => {
                 const card = document.createElement('div');
                 card.className = `card ${!item.disponible ? 'sin-stock-card' : ''}`;
-                
+                const cantidad = Math.min(cantidadesSeleccionadas[item.id] || 1, Math.max(item.stock, 1));
                 const imgSrc = item.imagen ? `/static/uploads/${item.imagen}` : 'https://via.placeholder.com/150?text=Bebida';
-                
+
                 card.innerHTML = `
                     <div class="img-container">
-                        <img src="${imgSrc}" alt="${item.nombre}">
+                        <img src="${imgSrc}" alt="${escaparHtml(item.nombre)}">
                         ${!item.disponible ? '<span class="badge-sin-stock">SIN STOCK</span>' : ''}
                     </div>
-                    <h3>${item.nombre}</h3>
-                    <p class="precio">$${item.precio}</p>
+                    <h3>${escaparHtml(item.nombre)}</h3>
+                    <p class="precio">
+                        ${item.precio_final < item.precio ? `<del>$${formatoMoneda(item.precio)}</del> ` : ''}
+                        <strong>$${formatoMoneda(item.precio_final)}</strong>
+                    </p>
+                    ${Number(item.descuento_pct) > 0 ? `<span class="badge-descuento">${Number(item.descuento_pct).toLocaleString('es-AR')}% de descuento</span>` : ''}
+                    <span class="badge-efectivo">2% adicional pagando en efectivo</span>
+                    <div class="selector-cantidad" aria-label="Elegir cantidad">
+                        <button type="button" aria-label="Restar una unidad" onclick="cambiarCantidadSeleccionada(${item.id}, -1)" ${!item.disponible ? 'disabled' : ''}>−</button>
+                        <input type="number" id="cantidad-producto-${item.id}" min="1" max="${item.stock}" value="${cantidad}" aria-label="Cantidad de ${escaparHtml(item.nombre)}" onchange="establecerCantidadSeleccionada(${item.id}, this.value)" ${!item.disponible ? 'disabled' : ''}>
+                        <button type="button" aria-label="Sumar una unidad" onclick="cambiarCantidadSeleccionada(${item.id}, 1)" ${!item.disponible ? 'disabled' : ''}>+</button>
+                    </div>
                     <button 
                         class="btn-agregar" 
-                        onclick="agregarAlCarrito(${item.id})" 
+                        onclick="agregarAlCarrito(${item.id})"
                         ${!item.disponible ? 'disabled' : ''}>
                         ${item.disponible ? 'Agregar al Carrito' : 'Sin Stock'}
                     </button>
@@ -130,34 +154,69 @@
         function agregarAlCarrito(id) {
             const prod = catalog.find(b => b.id === id);
             if (!prod || !prod.disponible) return;
+            const cantidad = Math.max(1, Number(cantidadesSeleccionadas[id] || 1));
 
             const itemInCart = carrito.find(item => item.id === id);
             if (itemInCart) {
-                itemInCart.cantidad++;
+                itemInCart.cantidad = Math.min(prod.stock, itemInCart.cantidad + cantidad);
             } else {
-                carrito.push({ ...prod, cantidad: 1 });
+                carrito.push({ ...prod, cantidad: Math.min(prod.stock, cantidad) });
             }
+            actualizarCarritoUI();
+        }
+
+        function cambiarCantidadSeleccionada(id, cambio) {
+            const producto = catalog.find(item => item.id === id);
+            const actual = Number(cantidadesSeleccionadas[id] || 1);
+            establecerCantidadSeleccionada(id, actual + cambio);
+            const input = document.getElementById(`cantidad-producto-${id}`);
+            if (input && producto) input.value = cantidadesSeleccionadas[id];
+        }
+
+        function establecerCantidadSeleccionada(id, valor) {
+            const producto = catalog.find(item => item.id === id);
+            if (!producto) return;
+            cantidadesSeleccionadas[id] = Math.max(1, Math.min(producto.stock, Math.floor(Number(valor) || 1)));
+        }
+
+        function cambiarCantidadCarrito(id, cambio) {
+            const producto = carrito.find(item => item.id === id);
+            if (!producto) return;
+            producto.cantidad = Math.min(producto.stock, producto.cantidad + cambio);
+            if (producto.cantidad < 1) carrito = carrito.filter(item => item.id !== id);
             actualizarCarritoUI();
         }
 
         function actualizarCarritoUI() {
             const container = document.getElementById('carrito-items');
             container.innerHTML = '';
-            let total = 0;
+            let subtotal = 0;
             let count = 0;
 
             carrito.forEach(item => {
-                total += item.precio * item.cantidad;
+                const totalItem = item.precio_final * item.cantidad;
+                subtotal += totalItem;
                 count += item.cantidad;
                 const div = document.createElement('div');
                 div.className = 'cart-item';
                 div.innerHTML = `
-                    <p><strong>${item.nombre}</strong> (x${item.cantidad}) - $${item.precio * item.cantidad}</p>
+                    <p><strong>${escaparHtml(item.nombre)}</strong> × ${item.cantidad} · $${formatoMoneda(totalItem)}</p>
+                    <div class="selector-cantidad selector-carrito">
+                        <button type="button" aria-label="Quitar una unidad" onclick="cambiarCantidadCarrito(${item.id}, -1)">−</button>
+                        <span>${item.cantidad}</span>
+                        <button type="button" aria-label="Agregar una unidad" onclick="cambiarCantidadCarrito(${item.id}, 1)" ${item.cantidad >= item.stock ? 'disabled' : ''}>+</button>
+                    </div>
                 `;
                 container.appendChild(div);
             });
 
-            document.getElementById('total-precio').innerText = total;
+            subtotal = Math.round((subtotal + Number.EPSILON) * 100) / 100;
+            const aplicaEfectivo = document.getElementById('metodo-pago').value === 'Efectivo';
+            const descuento = aplicaEfectivo ? Math.round(subtotal * 0.02 * 100) / 100 : 0;
+            document.getElementById('subtotal-precio').innerText = formatoMoneda(subtotal);
+            document.getElementById('descuento-efectivo').innerText = formatoMoneda(descuento);
+            document.getElementById('descuento-efectivo-fila').classList.toggle('hidden', !aplicaEfectivo || subtotal === 0);
+            document.getElementById('total-precio').innerText = formatoMoneda(subtotal - descuento);
             document.getElementById('cart-count').innerText = count;
         }
 
@@ -192,8 +251,7 @@ async function enviarPedido(e) {
         entrega: document.getElementById('tipo-entrega').value,
         direccion: document.getElementById('cliente-direccion').value || 'Retiro en local',
         metodoPago: document.getElementById('metodo-pago').value,
-        items: carrito,
-        total: document.getElementById('total-precio').innerText
+        items: carrito.map(item => ({ id: item.id, cantidad: item.cantidad }))
     };
 
     const res = await fetch('/api/pedidos/crear', {
@@ -213,7 +271,7 @@ async function enviarPedido(e) {
 
         mostrarCajaSeguimiento(ultimoPedidoId);
     } else {
-        alert("Ocurrió un error al enviar el pedido.");
+        alert(respuesta.mensaje || "Ocurrió un error al enviar el pedido.");
     }
 }
 
