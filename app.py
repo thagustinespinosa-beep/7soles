@@ -1,8 +1,12 @@
 import os
-from flask import Flask, render_template, request, jsonify
+from functools import wraps
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = os.environ.get('FLASK_SECRET_KEY', 'distribuidora-dev-secret-key-change-me')
+ADMIN_USERNAME = 'guille1901'
+ADMIN_PASSWORD = 'casla127'
 
 # Configuración para subida de imágenes
 UPLOAD_FOLDER = os.path.join('static', 'uploads')
@@ -75,19 +79,51 @@ def consultar_estado_pedido(pedido_id):
 
 # --- RUTAS DE ADMINISTRACIÓN ---
 
+def admin_required(view):
+    @wraps(view)
+    def wrapped_view(*args, **kwargs):
+        if not session.get('admin_authenticated'):
+            if request.path.startswith('/api/'):
+                return jsonify({"status": "error", "mensaje": "No autorizado"}), 401
+            return redirect(url_for('admin_login'))
+        return view(*args, **kwargs)
+    return wrapped_view
+
+@app.route('/admin/login', methods=['GET', 'POST'])
+def admin_login():
+    error = None
+    if request.method == 'POST':
+        username = request.form.get('username', '')
+        password = request.form.get('password', '')
+        if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
+            session['admin_authenticated'] = True
+            return redirect(url_for('admin'))
+        error = 'Nombre de usuario o contraseña incorrectos.'
+    return render_template('admin_login.html', error=error)
+
+@app.route('/admin/logout', methods=['POST'])
+@admin_required
+def admin_logout():
+    session.clear()
+    return redirect(url_for('admin_login'))
+
 @app.route('/admin')
+@admin_required
 def admin():
     return render_template('admin.html', configuracion=configuracion)
 
 @app.route('/api/admin/bebidas', methods=['GET'])
+@admin_required
 def admin_get_bebidas():
     return jsonify(bebidas)
 
 @app.route('/api/admin/pedidos', methods=['GET'])
+@admin_required
 def admin_get_pedidos():
     return jsonify(pedidos)
 
 @app.route('/api/admin/agregar_producto', methods=['POST'])
+@admin_required
 def agregar_producto():
     nombre = request.form.get('nombre')
     precio = float(request.form.get('precio', 0))
@@ -111,6 +147,7 @@ def agregar_producto():
     return jsonify({"status": "ok", "mensaje": "Producto agregado"})
 
 @app.route('/api/admin/actualizar_producto', methods=['POST'])
+@admin_required
 def actualizar_producto():
     data = request.json
     p_id = int(data.get('id'))
@@ -124,7 +161,27 @@ def actualizar_producto():
             return jsonify({"status": "ok", "mensaje": "Producto actualizado"})
     return jsonify({"status": "error", "mensaje": "Producto no encontrado"}), 404
 
+@app.route('/api/admin/eliminar_producto', methods=['POST'])
+@admin_required
+def eliminar_producto():
+    data = request.json or {}
+    try:
+        producto_id = int(data.get('id'))
+    except (TypeError, ValueError):
+        return jsonify({"status": "error", "mensaje": "ID de producto inválido"}), 400
+
+    for bebida in bebidas:
+        if bebida['id'] == producto_id:
+            bebidas.remove(bebida)
+            if bebida.get('imagen'):
+                image_path = os.path.join(app.config['UPLOAD_FOLDER'], os.path.basename(bebida['imagen']))
+                if os.path.isfile(image_path):
+                    os.remove(image_path)
+            return jsonify({"status": "ok", "mensaje": "Producto eliminado"})
+    return jsonify({"status": "error", "mensaje": "Producto no encontrado"}), 404
+
 @app.route('/api/admin/toggle_delivery', methods=['POST'])
+@admin_required
 def toggle_delivery():
     data = request.json
     configuracion["delivery_disponible"] = bool(data.get('disponible'))
@@ -134,6 +191,7 @@ def toggle_delivery():
 # --- ACCIONES DEL ADMIN EN PEDIDOS ---
 
 @app.route('/api/admin/aceptar_pedido', methods=['POST'])
+@admin_required
 def aceptar_pedido():
     data = request.json
     pedido_id = int(data.get('id'))
@@ -154,10 +212,13 @@ def aceptar_pedido():
     return jsonify({"status": "error", "mensaje": "Pedido no encontrado"}), 404
 
 @app.route('/api/admin/rechazar_pedido', methods=['POST'])
+@admin_required
 def rechazar_pedido():
     data = request.json
     pedido_id = int(data.get('id'))
-    motivo = data.get('motivo', 'Sin stock o fuera del área de cobertura.')
+    motivo = (data.get('motivo') or '').strip()
+    if not motivo:
+        return jsonify({"status": "error", "mensaje": "Debe indicar el motivo del rechazo"}), 400
     
     for p in pedidos:
         if p['id'] == pedido_id:
@@ -176,6 +237,7 @@ def rechazar_pedido():
     return jsonify({"status": "error", "mensaje": "Pedido no encontrado"}), 404
 
 @app.route('/api/admin/finalizar_pedido', methods=['POST'])
+@admin_required
 def finalizar_pedido():
     data = request.json
     pedido_id = int(data.get('id'))

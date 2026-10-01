@@ -79,9 +79,10 @@
 
         async function cargarCatalogo() {
             try {
-                const res = await fetch('/api/bebidas');
+                const res = await fetch('/api/bebidas', { cache: 'no-store' });
                 catalog = await res.json();
-                renderCatalogo(catalog);
+                const query = document.getElementById('buscar-input').value.toLowerCase();
+                renderCatalogo(catalog.filter(b => b.nombre.toLowerCase().includes(query)));
             } catch (err) {
                 console.error("Error al cargar bebidas:", err);
             }
@@ -264,6 +265,7 @@ async function consultarEstado(id) {
 }
 
         cargarCatalogo();
+        setInterval(cargarCatalogo, 5000);
     </script>
 </body>
 </html>

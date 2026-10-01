@@ -10,7 +10,12 @@
 
     <header class="admin-header">
         <h1>⚙️ Panel del Creador (Administración)</h1>
-        <a href="/" style="color: white; font-weight: bold;">Ver tienda pública</a>
+        <div style="display: flex; gap: 16px; align-items: center;">
+            <a href="/" style="color: white; font-weight: bold;">Ver tienda pública</a>
+            <form action="/admin/logout" method="post" style="margin: 0;">
+                <button type="submit" class="btn-guardar">Cerrar sesión</button>
+            </form>
+        </div>
     </header>
 
     <div class="container main-admin">
@@ -204,6 +209,10 @@
         async function rechazarPedido(id) {
             const motivo = prompt("Escribe la razón del rechazo / cancelación:");
             if (motivo === null) return;
+            if (!motivo.trim()) {
+                alert("Debes indicar el motivo del rechazo.");
+                return;
+            }
 
             const res = await fetch('/api/admin/rechazar_pedido', {
                 method: 'POST',
@@ -220,7 +229,7 @@
                 }
                 cargarPedidos();
             } else {
-                alert("Error al rechazar el pedido.");
+                alert(data.mensaje || "Error al rechazar el pedido.");
             }
         }
 
@@ -260,7 +269,10 @@
                         <td><strong>${p.nombre}</strong></td>
                         <td><input type="number" id="precio-${p.id}" value="${p.precio}" step="0.01"></td>
                         <td><input type="number" id="stock-${p.id}" value="${p.stock}"></td>
-                        <td><button class="btn-guardar" onclick="guardarCambios(${p.id})">Guardar</button></td>
+                        <td style="display: flex; gap: 6px;">
+                            <button class="btn-guardar" onclick="guardarCambios(${p.id})">Guardar</button>
+                            <button class="btn-guardar" onclick="eliminarProducto(${p.id})" style="background-color: #c0392b;">Eliminar</button>
+                        </td>
                     `;
                     tbody.appendChild(tr);
                 });
@@ -310,6 +322,23 @@
                 cargarAdmin();
             } else {
                 alert("Error al actualizar");
+            }
+        }
+
+        async function eliminarProducto(id) {
+            if (!confirm('¿Eliminar este producto del catálogo?')) return;
+
+            const res = await fetch('/api/admin/eliminar_producto', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id })
+            });
+            const data = await res.json();
+
+            if (res.ok) {
+                cargarAdmin();
+            } else {
+                alert(data.mensaje || 'Error al eliminar el producto.');
             }
         }
 
