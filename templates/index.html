@@ -86,6 +86,12 @@
             return Number(valor || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
 
+        function rutaImagen(imagen) {
+            if (!imagen) return '/static/images/producto-sin-imagen.svg';
+            if (/^https?:\/\//i.test(imagen) || imagen.startsWith('/')) return imagen;
+            return `/static/uploads/${encodeURIComponent(imagen)}`;
+        }
+
         async function cargarCatalogo() {
             try {
                 const res = await fetch('/api/bebidas', { cache: 'no-store' });
@@ -138,11 +144,11 @@
                 const card = document.createElement('div');
                 card.className = `card ${!item.disponible ? 'sin-stock-card' : ''}`;
                 const cantidad = Math.min(cantidadesSeleccionadas[item.id] || 1, Math.max(item.stock, 1));
-                const imgSrc = item.imagen ? `/static/uploads/${item.imagen}` : 'https://via.placeholder.com/150?text=Bebida';
+                const imgSrc = rutaImagen(item.imagen);
 
                 card.innerHTML = `
                     <div class="img-container">
-                        <img src="${imgSrc}" alt="${escaparHtml(item.nombre)}">
+                        <img src="${escaparHtml(imgSrc)}" onerror="this.onerror=null;this.src='/static/images/producto-sin-imagen.svg'" alt="${escaparHtml(item.nombre)}">
                         ${!item.disponible ? '<span class="badge-sin-stock">SIN STOCK</span>' : ''}
                     </div>
                     <h3>${escaparHtml(item.nombre)}</h3>

@@ -1,8 +1,10 @@
 import csv
 import json
 import os
+import uuid
 from functools import wraps
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
+from urllib.parse import urlparse
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
@@ -24,6 +26,35 @@ CASH_DISCOUNT_PERCENT = 2
 UPLOAD_FOLDER = os.path.join('static', 'uploads')
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+EXTENSIONES_IMAGEN_PERMITIDAS = {'jpg', 'jpeg', 'png', 'gif', 'webp'}
+
+
+def guardar_imagen_producto(archivo, url):
+    if archivo and archivo.filename:
+        nombre_seguro = secure_filename(archivo.filename)
+        extension = nombre_seguro.rsplit('.', 1)[-1].lower() if '.' in nombre_seguro else ''
+        if extension not in EXTENSIONES_IMAGEN_PERMITIDAS:
+            raise ValueError('Formato de imagen no permitido. Use JPG, PNG, GIF o WEBP.')
+        nombre_unico = f'{uuid.uuid4().hex}.{extension}'
+        archivo.save(os.path.join(app.config['UPLOAD_FOLDER'], nombre_unico))
+        return nombre_unico
+
+    url = (url or '').strip()
+    if not url:
+        return None
+    partes_url = urlparse(url)
+    if partes_url.scheme not in {'http', 'https'} or not partes_url.netloc:
+        raise ValueError('La URL de imagen debe comenzar con http:// o https://.')
+    return url
+
+
+def eliminar_imagen_subida(imagen):
+    if not imagen or imagen.startswith(('http://', 'https://')):
+        return
+    ruta = os.path.join(app.config['UPLOAD_FOLDER'], os.path.basename(imagen))
+    if os.path.isfile(ruta):
+        os.remove(ruta)
 
 def numero_opcional(valor):
     try:
@@ -294,12 +325,13 @@ def agregar_producto():
     stock = numero_opcional(request.form.get('stock'))
     if not nombre or precio is None or precio < 0 or descuento_pct is None or not 0 <= descuento_pct < 100 or stock is None or stock < 0:
         return jsonify({"status": "error", "mensaje": "Revise nombre, precio, descuento y stock"}), 400
-    imagen = request.files.get('imagen')
-
-    nombre_imagen = ""
-    if imagen and imagen.filename != '':
-        nombre_imagen = secure_filename(imagen.filename)
-        imagen.save(os.path.join(app.config['UPLOAD_FOLDER'], nombre_imagen))
+    try:
+        nombre_imagen = guardar_imagen_producto(
+            request.files.get('imagen'),
+            request.form.get('imagen_url')
+        ) or ''
+    except ValueError as error:
+        return jsonify({"status": "error", "mensaje": str(error)}), 400
 
     nuevo_id = max([b['id'] for b in bebidas], default=0) + 1
     nueva_bebida = {
@@ -339,6 +371,44 @@ def actualizar_producto():
             return jsonify({"status": "ok", "mensaje": "Producto actualizado"})
     return jsonify({"status": "error", "mensaje": "Producto no encontrado"}), 404
 
+
+@app.route('/api/admin/actualizar_imagen', methods=['POST'])
+@admin_required
+def actualizar_imagen_producto():
+    try:
+        producto_id = int(request.form.get('id'))
+    except (TypeError, ValueError):
+        return jsonify({"status": "error", "mensaje": "ID de producto inválido."}), 400
+
+    producto = next((bebida for bebida in bebidas if bebida['id'] == producto_id), None)
+    if producto is None:
+        return jsonify({"status": "error", "mensaje": "Producto no encontrado"}), 404
+
+    try:
+        nueva_imagen = guardar_imagen_producto(
+            request.files.get('imagen'),
+            request.form.get('imagen_url')
+        )
+    except ValueError as error:
+        return jsonify({"status": "error", "mensaje": str(error)}), 400
+
+    if nueva_imagen is None:
+        return jsonify({"status": "error", "mensaje": "Seleccioná un archivo o ingresá una URL de imagen."}), 400
+
+    imagen_anterior = producto.get('imagen', '')
+    producto['imagen'] = nueva_imagen
+    try:
+        guardar_catalogo()
+    except OSError as error:
+        producto['imagen'] = imagen_anterior
+        if nueva_imagen != imagen_anterior:
+            eliminar_imagen_subida(nueva_imagen)
+        return jsonify({"status": "error", "mensaje": f"No se pudo guardar la imagen: {error}"}), 500
+
+    if nueva_imagen != imagen_anterior:
+        eliminar_imagen_subida(imagen_anterior)
+    return jsonify({"status": "ok", "imagen": nueva_imagen, "mensaje": "Imagen actualizada"})
+
 @app.route('/api/admin/eliminar_producto', methods=['POST'])
 @admin_required
 def eliminar_producto():
@@ -351,11 +421,8 @@ def eliminar_producto():
     for bebida in bebidas:
         if bebida['id'] == producto_id:
             bebidas.remove(bebida)
-            if bebida.get('imagen'):
-                image_path = os.path.join(app.config['UPLOAD_FOLDER'], os.path.basename(bebida['imagen']))
-                if os.path.isfile(image_path):
-                    os.remove(image_path)
-                    guardar_catalogo()
+            eliminar_imagen_subida(bebida.get('imagen'))
+            guardar_catalogo()
             return jsonify({"status": "ok", "mensaje": "Producto eliminado"})
     return jsonify({"status": "error", "mensaje": "Producto no encontrado"}), 404
 

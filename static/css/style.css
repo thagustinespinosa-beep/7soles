@@ -170,6 +170,23 @@ form input, form select {
     color: #59666b;
 }
 
+.admin-table .imagen-producto-cell {
+    min-width: 250px;
+}
+
+.admin-table .imagen-producto-cell input[type="url"],
+.admin-table .imagen-producto-cell input[type="file"] {
+    display: block;
+    width: 100%;
+    max-width: 250px;
+    margin: 5px 0;
+}
+
+.admin-table .imagen-producto-cell .btn-guardar {
+    max-width: 250px;
+    padding: 7px;
+}
+
 .badge-descuento,
 .badge-efectivo {
     display: inline-block;

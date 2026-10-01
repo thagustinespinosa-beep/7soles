@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 180" role="img" aria-label="Imagen de producto no disponible">
+  <rect width="240" height="180" fill="#edf1f2"/>
+  <path d="M95 46h50l8 22v58H87V68z" fill="#fff" stroke="#7d8b8f" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M100 46v-13h40v13M88 81h70" fill="none" stroke="#7d8b8f" stroke-width="4" stroke-linecap="round"/>
+  <path d="M110 102h20" stroke="#27ae60" stroke-width="5" stroke-linecap="round"/>
+</svg>

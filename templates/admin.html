@@ -78,6 +78,7 @@
                 <div>
                     <label>Imagen del producto:</label>
                     <input type="file" id="nuevo-imagen" accept="image/*">
+                    <input type="url" id="nuevo-imagen-url" placeholder="https://ejemplo.com/imagen.jpg" aria-label="URL de imagen del producto">
                 </div>
                 <div style="grid-column: 1 / -1;">
                     <button type="submit" class="btn-guardar" style="margin-top: 10px;">Guardar Nueva Bebida</button>
@@ -123,6 +124,16 @@
 
         function calcularPrecioFinal(precio, descuento) {
             return Math.round((Number(precio || 0) * (1 - Number(descuento || 0) / 100) + Number.EPSILON) * 100) / 100;
+        }
+
+        function escaparHtml(valor) {
+            return String(valor || '').replace(/[&<>"']/g, caracter => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[caracter]));
+        }
+
+        function rutaImagen(imagen) {
+            if (!imagen) return '/static/images/producto-sin-imagen.svg';
+            if (/^https?:\/\//i.test(imagen) || imagen.startsWith('/')) return imagen;
+            return `/static/uploads/${encodeURIComponent(imagen)}`;
         }
 
         function actualizarPrecioNuevo() {
@@ -298,11 +309,16 @@
 
                 productos.forEach(p => {
                     const tr = document.createElement('tr');
-                    const imgSrc = p.imagen ? `/static/uploads/${p.imagen}` : 'https://via.placeholder.com/50?text=S/I';
+                    const urlImagen = /^https?:\/\//i.test(p.imagen || '') ? p.imagen : '';
                     
                     tr.innerHTML = `
-                        <td><img src="${imgSrc}" width="50" height="50" style="object-fit: contain; border-radius: 4px;"></td>
-                        <td><strong>${String(p.nombre).replace(/[&<>"']/g, caracter => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[caracter]))}</strong></td>
+                        <td class="imagen-producto-cell">
+                            <img src="${escaparHtml(rutaImagen(p.imagen))}" onerror="this.onerror=null;this.src='/static/images/producto-sin-imagen.svg'" width="50" height="50" alt="${escaparHtml(p.nombre)}" style="object-fit: contain; border-radius: 4px; display: block; margin-bottom: 6px;">
+                            <input type="url" id="imagen-url-${p.id}" value="${escaparHtml(urlImagen)}" placeholder="URL de imagen" aria-label="URL de imagen para ${escaparHtml(p.nombre)}">
+                            <input type="file" id="imagen-archivo-${p.id}" accept="image/*" aria-label="Subir imagen para ${escaparHtml(p.nombre)}">
+                            <button class="btn-guardar" type="button" onclick="actualizarImagen(${p.id})">Cambiar imagen</button>
+                        </td>
+                        <td><strong>${escaparHtml(p.nombre)}</strong></td>
                         <td><input type="number" min="0" id="precio-${p.id}" value="${p.precio}" step="0.01" oninput="actualizarPrecioFinal(${p.id})"></td>
                         <td><input type="number" min="0" max="99.99" id="descuento-${p.id}" value="${p.descuento_pct}" step="0.01" oninput="actualizarPrecioFinal(${p.id})"></td>
                         <td><input type="number" id="precio-final-${p.id}" value="${Number(p.precio_final).toFixed(2)}" readonly></td>
@@ -326,6 +342,7 @@
             formData.append('precio', document.getElementById('nuevo-precio').value);
             formData.append('descuento_pct', document.getElementById('nuevo-descuento').value);
             formData.append('stock', document.getElementById('nuevo-stock').value);
+            formData.append('imagen_url', document.getElementById('nuevo-imagen-url').value);
             
             const fileInput = document.getElementById('nuevo-imagen');
             if (fileInput.files[0]) {
@@ -365,6 +382,25 @@
             } else {
                 const data = await res.json();
                 alert(data.mensaje || "Error al actualizar");
+            }
+        }
+
+        async function actualizarImagen(id) {
+            const formData = new FormData();
+            formData.append('id', id);
+            formData.append('imagen_url', document.getElementById(`imagen-url-${id}`).value);
+            const archivo = document.getElementById(`imagen-archivo-${id}`).files[0];
+            if (archivo) formData.append('imagen', archivo);
+
+            const res = await fetch('/api/admin/actualizar_imagen', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await res.json();
+            if (res.ok) {
+                cargarAdmin();
+            } else {
+                alert(data.mensaje || 'No se pudo actualizar la imagen.');
             }
         }
 
