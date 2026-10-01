@@ -49,11 +49,9 @@
                 <label>Opción de Entrega:</label>
                 <select id="tipo-entrega" onchange="toggleDireccion()" required>
                     <option value="retiro">Retiro en local</option>
-                    {% if delivery_disponible %}
-                        <option value="delivery">Delivery a domicilio</option>
-                    {% else %}
-                        <option value="delivery" disabled>Delivery (No disponible actualmente)</option>
-                    {% endif %}
+                    <option value="delivery" {% if not delivery_disponible %}disabled{% endif %}>
+                        {% if delivery_disponible %}Delivery a domicilio{% else %}Delivery (No disponible actualmente){% endif %}
+                    </option>
                 </select>
 
                 <div id="casilla-direccion" class="hidden">
@@ -78,6 +76,7 @@
         let catalog = [];
         let carrito = [];
         const cantidadesSeleccionadas = {};
+        let deliveryActualizable = !document.querySelector('#tipo-entrega option[value="delivery"]').disabled;
 
         function escaparHtml(valor) {
             return String(valor).replace(/[&<>"']/g, caracter => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[caracter]));
@@ -100,6 +99,29 @@
                 renderCatalogo(catalog.filter(b => b.nombre.toLowerCase().includes(query)));
             } catch (err) {
                 console.error("Error al cargar bebidas:", err);
+            }
+        }
+
+        async function actualizarEstadoDelivery() {
+            try {
+                const res = await fetch('/api/configuracion', { cache: 'no-store' });
+                if (!res.ok) return;
+                const data = await res.json();
+                const opcionDelivery = document.querySelector('#tipo-entrega option[value="delivery"]');
+                const tipoEntrega = document.getElementById('tipo-entrega');
+                if (!opcionDelivery) return;
+
+                opcionDelivery.disabled = !data.delivery_disponible;
+                opcionDelivery.textContent = data.delivery_disponible
+                    ? 'Delivery a domicilio'
+                    : 'Delivery (No disponible actualmente)';
+                if (!data.delivery_disponible && tipoEntrega.value === 'delivery') {
+                    tipoEntrega.value = 'retiro';
+                    toggleDireccion();
+                }
+                deliveryActualizable = data.delivery_disponible;
+            } catch (err) {
+                console.error('Error al consultar el estado de Delivery:', err);
             }
         }
 
@@ -254,6 +276,11 @@ async function enviarPedido(e) {
         return;
     }
 
+    if (document.getElementById('tipo-entrega').value === 'delivery' && !deliveryActualizable) {
+        alert('Delivery no está disponible actualmente. Elegí retiro en local.');
+        return;
+    }
+
     const datosPedido = {
         nombre: document.getElementById('cliente-nombre').value,
         telefono: document.getElementById('cliente-telefono').value,
@@ -277,9 +304,14 @@ async function enviarPedido(e) {
         actualizarCarritoUI();
         document.getElementById('form-pedido').reset();
         if (typeof toggleDireccion === 'function') toggleDireccion();
+        await actualizarEstadoDelivery();
 
         mostrarCajaSeguimiento(ultimoPedidoId);
     } else {
+        if (res.status === 409 && datosPedido.entrega === 'delivery') {
+            deliveryActualizable = false;
+            await actualizarEstadoDelivery();
+        }
         alert(respuesta.mensaje || "Ocurrió un error al enviar el pedido.");
     }
 }
@@ -332,7 +364,9 @@ async function consultarEstado(id) {
 }
 
         cargarCatalogo();
+        actualizarEstadoDelivery();
         setInterval(cargarCatalogo, 5000);
+        setInterval(actualizarEstadoDelivery, 5000);
     </script>
 </body>
 </html>

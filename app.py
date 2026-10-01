@@ -12,6 +12,10 @@ app.config['PRODUCTS_STORE'] = os.environ.get(
     'PRODUCTS_STORE_PATH',
     os.path.join(os.path.dirname(__file__), '.productos_7soles.json')
 )
+app.config['DELIVERY_CONFIG'] = os.environ.get(
+    'DELIVERY_CONFIG_PATH',
+    os.path.join(os.path.dirname(__file__), '.configuracion.json')
+)
 ADMIN_USERNAME = 'guille1901'
 ADMIN_PASSWORD = 'casla127'
 CASH_DISCOUNT_PERCENT = 2
@@ -106,15 +110,43 @@ bebidas = inicializar_catalogo()
 pedidos = []
 contador_pedidos = 1
 
-configuracion = {
-    "delivery_disponible": True
-}
+def cargar_configuracion():
+    try:
+        with open(app.config['DELIVERY_CONFIG'], encoding='utf-8') as archivo:
+            guardada = json.load(archivo)
+        disponible = guardada.get('delivery_disponible')
+        if isinstance(disponible, bool):
+            return {'delivery_disponible': disponible}
+    except (OSError, json.JSONDecodeError, AttributeError):
+        pass
+    return {'delivery_disponible': True}
+
+
+def guardar_configuracion():
+    ruta = app.config['DELIVERY_CONFIG']
+    os.makedirs(os.path.dirname(os.path.abspath(ruta)), exist_ok=True)
+    temporal = f'{ruta}.tmp'
+    with open(temporal, 'w', encoding='utf-8') as archivo:
+        json.dump(configuracion, archivo, ensure_ascii=False, indent=2)
+    os.replace(temporal, ruta)
+
+
+configuracion = cargar_configuracion()
 
 # --- RUTAS DE LA TIENDA PÚBLICA ---
 
 @app.route('/')
 def cliente_index():
-    return render_template('index.html', configuracion=configuracion)
+    return render_template(
+        'index.html',
+        configuracion=configuracion,
+        delivery_disponible=configuracion['delivery_disponible']
+    )
+
+
+@app.route('/api/configuracion', methods=['GET'])
+def get_configuracion():
+    return jsonify({'delivery_disponible': configuracion['delivery_disponible']})
 
 @app.route('/api/bebidas', methods=['GET'])
 def get_bebidas():
@@ -127,6 +159,8 @@ def get_bebidas():
 def crear_pedido():
     global contador_pedidos
     data = request.json or {}
+    if data.get('entrega') == 'delivery' and not configuracion['delivery_disponible']:
+        return jsonify({"status": "error", "mensaje": "Delivery no está disponible actualmente"}), 409
     productos_por_id = {producto['id']: producto for producto in bebidas}
     cantidades = {}
     try:
@@ -337,12 +371,25 @@ def sincronizar_csv():
         return jsonify({"status": "error", "mensaje": f"No se pudo importar el CSV: {error}"}), 500
     return jsonify({"status": "ok", "cantidad": len(bebidas), "mensaje": "Catálogo sincronizado desde el CSV"})
 
-@app.route('/api/admin/toggle_delivery', methods=['POST'])
+@app.route('/api/admin/toggle_delivery', methods=['POST', 'PUT'])
 @admin_required
 def toggle_delivery():
-    data = request.json
-    configuracion["delivery_disponible"] = bool(data.get('disponible'))
-    return jsonify({"status": "ok", "delivery_disponible": configuracion["delivery_disponible"]})
+    data = request.get_json(silent=True) or {}
+    disponible = data.get('disponible')
+    if not isinstance(disponible, bool):
+        return jsonify({"status": "error", "mensaje": "El estado debe ser verdadero o falso"}), 400
+    estado_anterior = configuracion['delivery_disponible']
+    configuracion['delivery_disponible'] = disponible
+    try:
+        guardar_configuracion()
+    except OSError as error:
+        configuracion['delivery_disponible'] = estado_anterior
+        return jsonify({"status": "error", "mensaje": f"No se pudo guardar la configuración: {error}"}), 500
+    return jsonify({
+        "status": "ok",
+        "delivery_disponible": configuracion['delivery_disponible'],
+        "mensaje": "Delivery habilitado" if disponible else "Delivery deshabilitado"
+    })
 
 
 # --- ACCIONES DEL ADMIN EN PEDIDOS ---

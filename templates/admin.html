@@ -27,6 +27,7 @@
                 <input type="checkbox" id="delivery-toggle" onchange="cambiarEstadoDelivery(this.checked)" 
                 {% if configuracion and configuracion.delivery_disponible %} checked {% endif %}>
                 <span>Habilitar Delivery para los clientes</span>
+                <span id="delivery-estado" role="status">{{ 'Habilitado' if configuracion.delivery_disponible else 'Deshabilitado' }}</span>
             </label>
         </section>
 
@@ -397,11 +398,26 @@
         }
 
         async function cambiarEstadoDelivery(estado) {
-            await fetch('/api/admin/toggle_delivery', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ disponible: estado })
-            });
+            const toggle = document.getElementById('delivery-toggle');
+            const indicador = document.getElementById('delivery-estado');
+            toggle.disabled = true;
+            try {
+                const res = await fetch('/api/admin/toggle_delivery', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ disponible: estado })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.mensaje || 'No se pudo guardar el estado de Delivery.');
+                toggle.checked = data.delivery_disponible;
+                indicador.textContent = data.delivery_disponible ? 'Habilitado' : 'Deshabilitado';
+            } catch (error) {
+                toggle.checked = !estado;
+                indicador.textContent = toggle.checked ? 'Habilitado' : 'Deshabilitado';
+                alert(error.message);
+            } finally {
+                toggle.disabled = false;
+            }
         }
 
         // Carga inicial
