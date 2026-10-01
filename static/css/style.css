@@ -252,6 +252,16 @@ form input, form select {
     border-bottom: 1px solid #e1e5e7;
 }
 
+.pedido-envio-detalle {
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 1px solid #d9e0e2;
+}
+
+.pedido-envio-detalle p {
+    margin: 5px 0;
+}
+
 .total-row {
     display: flex;
     justify-content: space-between;

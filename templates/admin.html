@@ -190,10 +190,26 @@
                 div.style.backgroundColor = p.estado === 'Confirmado' ? '#e8f8f5' : (p.estado === 'Rechazado' ? '#fadbd8' : (p.estado === 'Finalizado' ? '#f2f4f4' : '#fff8e7'));
 
                 const listaItems = (p.items || []).map(i => `${i.nombre} (x${i.cantidad})`).join(', ');
+                const subtotalProductos = Number(p.subtotal_productos ?? p.total ?? 0);
+                const envioPendiente = p.entrega === 'delivery' && p.costo_envio == null;
 
                 let acciones = '';
+                if (p.entrega === 'delivery') {
+                    acciones += `
+                        <div style="margin-top: 12px; padding-top: 10px; border-top: 1px solid #ddd;">
+                            <p><strong>Subtotal productos:</strong> $${formatoPrecio(subtotalProductos)}</p>
+                            <p><strong>Envío:</strong> ${envioPendiente ? 'A confirmar por el vendedor' : `$${formatoPrecio(p.costo_envio)}`}</p>
+                            <p><strong>Total ${envioPendiente ? 'provisorio' : 'final'}:</strong> $${formatoPrecio(p.total)}</p>
+                            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 8px;">
+                                <label for="costo-envio-${p.id}">Asignar / editar costo de envío ($)</label>
+                                <input type="number" id="costo-envio-${p.id}" min="0" step="0.01" value="${p.costo_envio ?? ''}" placeholder="Monto según zona">
+                                <button class="btn-guardar" type="button" onclick="guardarCostoEnvio(${p.id})" style="width: auto;">Guardar envío y notificar</button>
+                            </div>
+                        </div>
+                    `;
+                }
                 if (p.estado === 'Pendiente') {
-                    acciones = `
+                    acciones += `
                         <div style="display: flex; gap: 10px; margin-top: 10px;">
                             <button class="btn-guardar" onclick="aceptarPedido(${p.id})" style="background-color: #27ae60;">
                                 ✅ Aceptar Pedido y Notificar
@@ -204,15 +220,15 @@
                         </div>
                     `;
                 } else if (p.estado === 'Confirmado') {
-                    acciones = `
+                    acciones += `
                         <button class="btn-guardar" onclick="finalizarPedido(${p.id})" style="margin-top: 10px; background-color: #2980b9;">
                             🏁 Marcar como Terminado / Entregado
                         </button>
                     `;
                 } else if (p.estado === 'Rechazado') {
-                    acciones = `<p style="color: #c0392b; font-weight: bold; margin-top: 8px;">❌ Cancelado: ${p.motivo_rechazo || 'Sin motivo'}</p>`;
+                    acciones += `<p style="color: #c0392b; font-weight: bold; margin-top: 8px;">❌ Cancelado: ${p.motivo_rechazo || 'Sin motivo'}</p>`;
                 } else {
-                    acciones = `<p style="color: #27ae60; font-weight: bold; margin-top: 8px;">✔ Pedido Finalizado</p>`;
+                    acciones += `<p style="color: #27ae60; font-weight: bold; margin-top: 8px;">✔ Pedido Finalizado</p>`;
                 }
 
                 div.innerHTML = `
@@ -226,7 +242,7 @@
                     <p>🚚 <strong>Entrega:</strong> ${(p.entrega || '').toUpperCase()} ${p.direccion ? `(${p.direccion})` : ''}</p>
                     <p>💳 <strong>Método de Pago:</strong> ${p.metodoPago}</p>
                     <p>🛒 <strong>Detalle:</strong> ${listaItems}</p>
-                    <p style="font-size: 16px; margin-top: 5px;"><strong>Total: $${p.total}</strong></p>
+                    ${p.entrega !== 'delivery' ? `<p style="font-size: 16px; margin-top: 5px;"><strong>Total: $${formatoPrecio(p.total)}</strong></p>` : ''}
                     ${acciones}
                 `;
                 contenedor.appendChild(div);
@@ -250,6 +266,28 @@
                 cargarPedidos();
             } else {
                 alert("Error al confirmar el pedido.");
+            }
+        }
+
+        async function guardarCostoEnvio(id) {
+            const costo = document.getElementById(`costo-envio-${id}`).value;
+            if (costo === '') {
+                alert('Ingresá el costo de envío correspondiente a la zona.');
+                return;
+            }
+            const res = await fetch('/api/admin/asignar_costo_envio', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id, costo_envio: costo })
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                alert(data.mensaje || 'No se pudo guardar el costo de envío.');
+                return;
+            }
+            cargarPedidos();
+            if (data.telefono) {
+                window.open(`https://wa.me/${data.telefono}?text=${encodeURIComponent(data.texto_whatsapp)}`, '_blank');
             }
         }
 

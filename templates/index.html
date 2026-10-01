@@ -36,6 +36,7 @@
             <p id="descuento-producto-fila" class="nota-pago hidden">Descuentos de productos por efectivo: −$<span id="descuento-producto">0.00</span></p>
             <p id="descuento-efectivo-fila" class="nota-pago hidden">Descuento global en efectivo (2%): −$<span id="descuento-efectivo">0.00</span></p>
             <div class="total-row"><strong>Total:</strong> $<span id="total-precio">0.00</span></div>
+            <p id="aviso-envio-pendiente" class="nota-pago hidden">Costo de envío: A confirmar por el vendedor según la zona. El total mostrado corresponde a los productos.</p>
 
             <form id="form-pedido" onsubmit="enviarPedido(event)">
                 <h3>Datos del Pedido</h3>
@@ -55,8 +56,9 @@
                 </select>
 
                 <div id="casilla-direccion" class="hidden">
-                    <label>Dirección de Envío:</label>
-                    <input type="text" id="cliente-direccion" placeholder="Calle, Número, Piso/Depto">
+                    <label>Dirección / zona de envío:</label>
+                    <input type="text" id="cliente-direccion" placeholder="Barrio, localidad y dirección">
+                    <p class="nota-pago">El costo de envío se coordinará y confirmará con el vendedor según la zona.</p>
                 </div>
 
                 <label>Método de Pago:</label>
@@ -264,6 +266,7 @@
         function toggleDireccion() {
             const tipo = document.getElementById('tipo-entrega').value;
             const casilla = document.getElementById('casilla-direccion');
+            document.getElementById('aviso-envio-pendiente').classList.toggle('hidden', tipo !== 'delivery');
             if (tipo === 'delivery') {
                 casilla.classList.remove('hidden');
                 document.getElementById('cliente-direccion').required = true;
@@ -349,23 +352,26 @@ async function consultarEstado(id) {
 
     const data = await res.json();
     const contenedor = document.getElementById('status-pedido-container');
+    const detalleEnvio = data.entrega === 'delivery'
+        ? `<div class="pedido-envio-detalle"><p><strong>Subtotal Productos:</strong> $${formatoMoneda(data.subtotal_productos)}</p><p><strong>Costo de Envío:</strong> ${data.costo_envio == null ? 'A confirmar por el vendedor' : `$${formatoMoneda(data.costo_envio)} (asignado por la tienda)`}</p><p><strong>TOTAL FINAL A PAGAR:</strong> $${formatoMoneda(data.total)}</p></div>`
+        : `<div class="pedido-envio-detalle"><p><strong>Total:</strong> $${formatoMoneda(data.total)}</p></div>`;
 
     if (data.estado === 'Pendiente') {
         contenedor.style.backgroundColor = '#fef9e7';
         contenedor.style.border = '1px solid #f39c12';
-        contenedor.innerHTML = `<h3>⏳ Estado del Pedido #${id}: Pendiente</h3><p>Tu pedido será confirmado a la brevedad por la distribuidora.</p>`;
+        contenedor.innerHTML = `<h3>⏳ Estado del Pedido #${id}: Pendiente</h3><p>Tu pedido será confirmado a la brevedad por la distribuidora.</p>${detalleEnvio}`;
     } else if (data.estado === 'Confirmado') {
         contenedor.style.backgroundColor = '#e8f8f5';
         contenedor.style.border = '1px solid #27ae60';
-        contenedor.innerHTML = `<h3>✅ Estado del Pedido #${id}: ¡En Proceso!</h3><p>Tu pedido fue aceptado por el administrador y ya lo estamos preparando.</p>`;
+        contenedor.innerHTML = `<h3>✅ Estado del Pedido #${id}: ¡En Proceso!</h3><p>Tu pedido fue aceptado por el administrador y ya lo estamos preparando.</p>${detalleEnvio}`;
     } else if (data.estado === 'Rechazado') {
         contenedor.style.backgroundColor = '#fadbd8';
         contenedor.style.border = '1px solid #e74c3c';
-        contenedor.innerHTML = `<h3>❌ Tu pedido fue rechazado</h3><p><strong>Motivo de cancelación:</strong> ${data.motivo_rechazo}</p>`;
+        contenedor.innerHTML = `<h3>❌ Tu pedido fue rechazado</h3><p><strong>Motivo de cancelación:</strong> ${escaparHtml(data.motivo_rechazo)}</p>${detalleEnvio}`;
     } else if (data.estado === 'Finalizado') {
         contenedor.style.backgroundColor = '#ebf5fb';
         contenedor.style.border = '1px solid #2980b9';
-        contenedor.innerHTML = `<h3>🚀 Pedido #${id} Completado</h3><p>¡El pedido ha sido entregado / listo para retirar!</p>`;
+        contenedor.innerHTML = `<h3>🚀 Pedido #${id} Completado</h3><p>¡El pedido ha sido entregado / listo para retirar!</p>${detalleEnvio}`;
     }
 }
 
