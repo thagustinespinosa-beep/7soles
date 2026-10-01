@@ -2,6 +2,7 @@ import csv
 import json
 import math
 import os
+from decimal import Decimal, ROUND_HALF_UP
 import uuid
 from functools import wraps
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
@@ -64,8 +65,15 @@ def numero_opcional(valor):
         return None
 
 
+def redondear_dinero(valor):
+    return float(Decimal(str(valor)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP))
+
+
 def precio_con_descuento(precio, descuento_pct):
-    return round(float(precio) * (1 - float(descuento_pct) / 100), 2)
+    precio_decimal = Decimal(str(precio))
+    descuento_decimal = Decimal(str(descuento_pct))
+    precio_final = precio_decimal * (Decimal('1') - descuento_decimal / Decimal('100'))
+    return redondear_dinero(precio_final)
 
 
 csv_catalogo_mtime_ns = None
@@ -473,6 +481,7 @@ def toggle_delivery():
 
 # --- ACCIONES DEL ADMIN EN PEDIDOS ---
 
+@app.route('/api/admin/confirmar_pedido', methods=['POST'])
 @app.route('/api/admin/aceptar_pedido', methods=['POST'])
 @admin_required
 def aceptar_pedido():
@@ -490,7 +499,7 @@ def aceptar_pedido():
         costo_enviado = data.get('costo_envio')
         if costo_enviado not in (None, ''):
             try:
-                costo_envio = round(float(costo_enviado), 2)
+                costo_envio = redondear_dinero(costo_enviado)
             except (TypeError, ValueError):
                 return jsonify({"status": "error", "mensaje": "Ingresá un costo de envío válido."}), 400
             if not math.isfinite(costo_envio) or costo_envio < 0:
@@ -500,7 +509,7 @@ def aceptar_pedido():
 
         if pedido.get('costo_envio') is None:
             return jsonify({"status": "error", "mensaje": "Asigná el costo de envío antes de aceptar este pedido."}), 400
-        pedido['total'] = round(float(pedido.get('subtotal_productos', pedido.get('total', 0))) + pedido['costo_envio'], 2)
+        pedido['total'] = redondear_dinero(float(pedido.get('subtotal_productos', pedido.get('total', 0))) + pedido['costo_envio'])
 
     pedido['estado'] = 'Confirmado'
     return jsonify({
@@ -519,7 +528,7 @@ def asignar_costo_envio():
     data = request.get_json(silent=True) or {}
     try:
         pedido_id = int(data.get('id'))
-        costo_envio = round(float(data.get('costo_envio')), 2)
+        costo_envio = redondear_dinero(data.get('costo_envio'))
     except (TypeError, ValueError):
         return jsonify({"status": "error", "mensaje": "Ingresá un costo de envío válido."}), 400
     if costo_envio < 0:
@@ -533,7 +542,7 @@ def asignar_costo_envio():
 
     pedido['costo_envio'] = costo_envio
     pedido['estado_envio'] = 'Asignado por la tienda'
-    pedido['total'] = round(float(pedido.get('subtotal_productos', pedido.get('total', 0))) + costo_envio, 2)
+    pedido['total'] = redondear_dinero(float(pedido.get('subtotal_productos', pedido.get('total', 0))) + costo_envio)
     return jsonify({
         "status": "ok",
         "pedido_id": pedido_id,

@@ -201,7 +201,7 @@
                             <p><strong>Envío:</strong> ${envioPendiente ? 'A confirmar por el vendedor' : `$${formatoPrecio(p.costo_envio)}`}</p>
                             <p><strong>Total ${envioPendiente ? 'provisorio' : 'final'}:</strong> $${formatoPrecio(p.total)}</p>
                             <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 8px;">
-                                <label for="costo-envio-${p.id}">Asignar / editar costo de envío ($)</label>
+                                <label for="costo-envio-${p.id}">Costo de Envío ($)</label>
                                 <input type="number" id="costo-envio-${p.id}" min="0" step="0.01" value="${p.costo_envio ?? ''}" placeholder="Monto según zona">
                                 <button class="btn-guardar" type="button" onclick="guardarCostoEnvio(${p.id})" style="width: auto;">Guardar costo de envío</button>
                             </div>
@@ -253,31 +253,38 @@
             const pedido = todosLosPedidos.find(item => item.id === id);
             const body = { id };
             if (pedido && pedido.entrega === 'delivery') {
-                let costo = document.getElementById(`costo-envio-${id}`).value.trim();
-                if (!costo && pedido.costo_envio == null) {
-                    costo = prompt('Ingresá el costo de envío correspondiente a la zona:');
-                    if (costo === null) return;
-                    if (!costo.trim()) {
-                        alert('Para aceptar un pedido con Delivery, primero asigná el costo de envío.');
-                        return;
-                    }
+                const inputCosto = document.getElementById(`costo-envio-${id}`);
+                let costo = inputCosto?.value.trim() || '';
+                if (!costo && pedido.costo_envio != null) costo = String(pedido.costo_envio);
+                if (!costo) {
+                    const ingresado = prompt('Ingresá el Costo de Envío ($) para aceptar este pedido:');
+                    if (ingresado === null) return;
+                    costo = ingresado.trim();
                 }
-                if (costo) body.costo_envio = costo;
+                if (!costo) {
+                    alert('Ingresá el costo de envío antes de aceptar el pedido.');
+                    return;
+                }
+                body.costo_envio = costo;
             }
 
-            const res = await fetch('/api/admin/aceptar_pedido', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body)
-            });
+            try {
+                const res = await fetch('/api/admin/confirmar_pedido', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
 
-            const data = await res.json();
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok || data.status !== 'ok') {
+                    alert(data.mensaje || `No se pudo confirmar el pedido (HTTP ${res.status}).`);
+                    return;
+                }
 
-            if (res.ok) {
                 alert(`Pedido aceptado. Total final: $${formatoPrecio(data.total)}.`);
                 cargarPedidos();
-            } else {
-                alert(data.mensaje || "Error al confirmar el pedido.");
+            } catch (error) {
+                alert(`No se pudo conectar con el servidor para confirmar el pedido: ${error.message}`);
             }
         }
 
