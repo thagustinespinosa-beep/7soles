@@ -103,7 +103,8 @@
                 catalog = await res.json();
                 carrito = carrito.map(item => {
                     const actualizado = catalog.find(producto => producto.id === item.id);
-                    return actualizado ? { ...actualizado, cantidad: Math.min(item.cantidad, actualizado.stock), cantidad_formato: item.cantidad_formato, formato: item.formato, pack_units: item.pack_units } : null;
+                    const variante = (actualizado?.pack_variantes || []).find(pack => Number(pack.unidades) === Number(item.pack_units));
+                    return actualizado && variante ? { ...actualizado, cantidad: Math.min(item.cantidad, Math.floor(actualizado.stock / variante.unidades)), precio_pack: variante.precio, formato: 'pack', pack_units: variante.unidades } : null;
                 }).filter(item => item && item.cantidad > 0);
                 actualizarCarritoUI();
                 const query = document.getElementById('buscar-input').value.toLowerCase();
@@ -148,12 +149,10 @@
             lista.forEach(item => {
                 const card = document.createElement('div');
                 card.className = `card ${!item.disponible ? 'sin-stock-card' : ''}`;
-                const packs = (item.pack_variantes || []).map(Number).filter(valor => valor > 1);
-                const cantidad = Math.min(cantidadesSeleccionadas[item.id] || 1, Math.max(Math.floor(item.stock / (packs[0] || 1)), 1));
+                const packs = item.pack_variantes || [];
+                const cantidad = Math.min(cantidadesSeleccionadas[item.id] || 1, Math.max(Math.floor(item.stock / (packs[0]?.unidades || 1)), 1));
                 const imgSrc = rutaImagen(item.imagen);
-                const opcionesFormato = packs.length
-                    ? `<label>Formato de venta:</label><select id="formato-${item.id}" onchange="actualizarLimiteCantidad(${item.id})"><option value="unidades" data-pack-units="1">Unidades</option>${packs.map(pack => `<option value="pack" data-pack-units="${pack}">Pack x${pack}</option>`).join('')}</select>`
-                    : '';
+                const opcionesFormato = `<label for="pack-${item.id}">Seleccionar Pack:</label><select id="pack-${item.id}" required onchange="actualizarPackSeleccionado(${item.id})"><option value="">Elegí una presentación</option>${packs.map(pack => `<option value="${pack.unidades}" data-pack-price="${pack.precio}">Pack x${pack.unidades} - $${formatoMoneda(pack.precio)}</option>`).join('')}</select>`;
 
                 card.innerHTML = `
                     <div class="img-container">
@@ -161,12 +160,12 @@
                         ${!item.disponible ? '<span class="badge-sin-stock">SIN STOCK</span>' : ''}
                     </div>
                     <h3>${escaparHtml(item.nombre)}</h3>
-                    <p class="precio"><strong>$${formatoMoneda(item.precio)}</strong></p>
+                    <p class="precio" id="precio-seleccionado-${item.id}"><strong>Seleccioná un pack</strong></p>
                     <span class="badge-efectivo">Aplica 2% global de descuento pagando en efectivo</span>
                     ${opcionesFormato}
                     <div class="selector-cantidad" aria-label="Elegir cantidad">
                         <button type="button" aria-label="Restar una unidad" onclick="cambiarCantidadSeleccionada(${item.id}, -1)" ${!item.disponible ? 'disabled' : ''}>−</button>
-                        <input type="number" id="cantidad-producto-${item.id}" min="1" max="${item.stock}" value="${cantidad}" aria-label="Cantidad de ${escaparHtml(item.nombre)}" onchange="establecerCantidadSeleccionada(${item.id}, this.value)" ${!item.disponible ? 'disabled' : ''}>
+                        <input type="number" id="cantidad-producto-${item.id}" min="1" max="${Math.floor(item.stock / (packs[0]?.unidades || 1))}" value="${cantidad}" aria-label="Cantidad de packs de ${escaparHtml(item.nombre)}" onchange="establecerCantidadSeleccionada(${item.id}, this.value)" ${!item.disponible ? 'disabled' : ''}>
                         <button type="button" aria-label="Sumar una unidad" onclick="cambiarCantidadSeleccionada(${item.id}, 1)" ${!item.disponible ? 'disabled' : ''}>+</button>
                     </div>
                     <button 
@@ -189,18 +188,22 @@
         function agregarAlCarrito(id) {
             const prod = catalog.find(b => b.id === id);
             if (!prod || !prod.disponible) return;
-            const selector = document.getElementById(`formato-${id}`);
-            const formato = selector?.value || 'unidades';
-            const packUnits = formato === 'pack' ? Number(selector.selectedOptions[0].dataset.packUnits) : 1;
-            const cantidadFormato = Math.max(1, Number(cantidadesSeleccionadas[id] || 1));
-            const cantidad = cantidadFormato * packUnits;
+            const selector = document.getElementById(`pack-${id}`);
+            if (!selector?.value) {
+                alert('Seleccioná un pack antes de agregar el producto.');
+                selector?.focus();
+                return;
+            }
+            const packUnits = Number(selector.value);
+            const precioPack = Number(selector.selectedOptions[0].dataset.packPrice);
+            const cantidadPacks = Math.max(1, Number(cantidadesSeleccionadas[id] || 1));
+            const cantidad = cantidadPacks;
 
-            const itemInCart = carrito.find(item => claveCarrito(item.id, item.formato || 'unidades', item.pack_units || 1) === claveCarrito(id, formato, packUnits));
+            const itemInCart = carrito.find(item => claveCarrito(item.id, 'pack', item.pack_units) === claveCarrito(id, 'pack', packUnits));
             if (itemInCart) {
-                itemInCart.cantidad = Math.min(prod.stock, itemInCart.cantidad + cantidad);
-                itemInCart.cantidad_formato = Math.floor(itemInCart.cantidad / packUnits);
+                itemInCart.cantidad = Math.min(Math.floor(prod.stock / packUnits), itemInCart.cantidad + cantidad);
             } else {
-                carrito.push({ ...prod, cantidad: Math.min(prod.stock, cantidad), cantidad_formato: cantidadFormato, formato, pack_units: packUnits });
+                carrito.push({ ...prod, cantidad: Math.min(Math.floor(prod.stock / packUnits), cantidad), precio_pack: precioPack, formato: 'pack', pack_units: packUnits });
             }
             actualizarCarritoUI();
         }
@@ -216,28 +219,29 @@
         function establecerCantidadSeleccionada(id, valor) {
             const producto = catalog.find(item => item.id === id);
             if (!producto) return;
-            const selector = document.getElementById(`formato-${id}`);
-            const packUnits = selector?.value === 'pack' ? Number(selector.selectedOptions[0].dataset.packUnits) : 1;
-            cantidadesSeleccionadas[id] = Math.max(1, Math.min(Math.floor(producto.stock / packUnits), Math.floor(Number(valor) || 1)));
+            const selector = document.getElementById(`pack-${id}`);
+            const packUnits = Number(selector?.value || 0);
+            cantidadesSeleccionadas[id] = Math.max(1, Math.min(packUnits ? Math.floor(producto.stock / packUnits) : 1, Math.floor(Number(valor) || 1)));
         }
 
-        function actualizarLimiteCantidad(id) {
+        function actualizarPackSeleccionado(id) {
             const producto = catalog.find(item => item.id === id);
             const input = document.getElementById(`cantidad-producto-${id}`);
             if (!producto || !input) return;
-            const selector = document.getElementById(`formato-${id}`);
-            const packUnits = selector?.value === 'pack' ? Number(selector.selectedOptions[0].dataset.packUnits) : 1;
-            input.max = Math.floor(producto.stock / packUnits);
+            const selector = document.getElementById(`pack-${id}`);
+            const packUnits = Number(selector?.value || 0);
+            const precio = selector?.selectedOptions[0]?.dataset.packPrice;
+            input.max = packUnits ? Math.floor(producto.stock / packUnits) : 1;
+            document.getElementById(`precio-seleccionado-${id}`).innerHTML = precio ? `<strong>$${formatoMoneda(precio)} por pack</strong>` : '<strong>Seleccioná un pack</strong>';
             establecerCantidadSeleccionada(id, input.value);
             input.value = cantidadesSeleccionadas[id];
         }
 
-        function cambiarCantidadCarrito(id, cambio, formato = 'unidades', packUnits = 1) {
-            const producto = carrito.find(item => claveCarrito(item.id, item.formato || 'unidades', item.pack_units || 1) === claveCarrito(id, formato, packUnits));
+        function cambiarCantidadCarrito(id, cambio, formato = 'pack', packUnits = 1) {
+            const producto = carrito.find(item => claveCarrito(item.id, 'pack', item.pack_units) === claveCarrito(id, formato, packUnits));
             if (!producto) return;
-            producto.cantidad = Math.min(producto.stock, producto.cantidad + cambio * packUnits);
-            producto.cantidad_formato = Math.floor(producto.cantidad / packUnits);
-            if (producto.cantidad < packUnits) carrito = carrito.filter(item => item !== producto);
+            producto.cantidad = Math.min(Math.floor(producto.stock / packUnits), producto.cantidad + cambio);
+            if (producto.cantidad < 1) carrito = carrito.filter(item => item !== producto);
             actualizarCarritoUI();
         }
 
@@ -249,20 +253,19 @@
             const aplicaEfectivo = document.getElementById('metodo-pago').value === 'Efectivo';
 
             carrito.forEach(item => {
-                const precioNormal = Number(item.precio);
-                const totalNormal = precioNormal * item.cantidad;
+                const precioPack = Number(item.precio_pack || 0);
+                const totalNormal = precioPack * item.cantidad;
                 subtotal += totalNormal;
-                count += item.cantidad;
-                const packUnits = item.pack_units || 1;
-                const cantidadFormato = item.cantidad_formato || Math.floor(item.cantidad / packUnits);
+                count += item.cantidad * (item.pack_units || 0);
+                const packUnits = item.pack_units;
                 const div = document.createElement('div');
                 div.className = 'cart-item';
                 div.innerHTML = `
-                    <p><strong>${escaparHtml(item.nombre)}</strong> × ${cantidadFormato} · $${formatoMoneda(totalNormal)}</p>
+                    <p><strong>${escaparHtml(item.nombre)}</strong> × ${item.cantidad} · $${formatoMoneda(totalNormal)}</p>
                     <div class="selector-cantidad selector-carrito">
-                        <button type="button" aria-label="Quitar una unidad" onclick="cambiarCantidadCarrito(${item.id}, -1, '${item.formato || 'unidades'}', ${packUnits})">−</button>
-                        <span>${cantidadFormato}</span>
-                        <button type="button" aria-label="Agregar una unidad" onclick="cambiarCantidadCarrito(${item.id}, 1, '${item.formato || 'unidades'}', ${packUnits})" ${item.cantidad + packUnits > item.stock ? 'disabled' : ''}>+</button>
+                        <button type="button" aria-label="Quitar un pack" onclick="cambiarCantidadCarrito(${item.id}, -1, 'pack', ${packUnits})">−</button>
+                        <span>${item.cantidad}</span>
+                        <button type="button" aria-label="Agregar un pack" onclick="cambiarCantidadCarrito(${item.id}, 1, 'pack', ${packUnits})" ${item.cantidad + 1 > Math.floor(item.stock / packUnits) ? 'disabled' : ''}>+</button>
                     </div>
                 `;
                 container.appendChild(div);
@@ -314,7 +317,7 @@ async function enviarPedido(e) {
         entrega: document.getElementById('tipo-entrega').value,
         direccion: document.getElementById('cliente-direccion').value || 'Retiro en local',
         metodoPago: document.getElementById('metodo-pago').value,
-        items: carrito.map(item => ({ id: item.id, cantidad: item.cantidad }))
+        items: carrito.map(item => ({ id: item.id, cantidad: item.cantidad, formato: 'pack', pack_units: item.pack_units }))
     };
 
     const res = await fetch('/api/pedidos/crear', {

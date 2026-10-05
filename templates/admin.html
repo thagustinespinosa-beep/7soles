@@ -64,8 +64,8 @@
                     <input type="number" min="0" step="0.01" id="nuevo-precio" required placeholder="Ej: 2500">
                 </div>
                 <div>
-                    <label>Variantes de pack (ej: 6, 12, 24):</label>
-                    <input type="text" id="nuevo-packs" placeholder="6, 12, 24">
+                    <label>Pack y precio (ej: 6:37500, 12:72000):</label>
+                    <input type="text" id="nuevo-packs" required placeholder="6:37500, 12:72000">
                 </div>
                 <div>
                     <label>Stock inicial:</label>
@@ -95,7 +95,7 @@
                         <th>Imagen</th>
                         <th>Producto</th>
                         <th>Precio normal ($)</th>
-                        <th>Packs</th>
+                        <th>Packs y precios</th>
                         <th>Stock Actual</th>
                         <th>Acción</th>
                     </tr>
@@ -353,7 +353,7 @@
                         </td>
                         <td><strong>${escaparHtml(p.nombre)}</strong></td>
                         <td><input type="number" min="0" id="precio-${p.id}" value="${p.precio}" step="0.01"></td>
-                        <td><input type="text" id="packs-${p.id}" value="${(p.pack_variantes || []).join(', ')}" placeholder="6, 12, 24"></td>
+                        <td><input type="text" id="packs-${p.id}" value="${(p.pack_variantes || []).map(pack => `${pack.unidades}:${pack.precio}`).join(', ')}" placeholder="6:37500, 12:72000"></td>
                         <td><input type="number" min="0" step="1" id="stock-${p.id}" value="${p.stock}"></td>
                         <td style="display: flex; gap: 6px;">
                             <button class="btn-guardar" onclick="guardarCambios(${p.id})">Guardar</button>

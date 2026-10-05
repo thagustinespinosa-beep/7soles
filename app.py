@@ -65,26 +65,37 @@ def numero_opcional(valor):
         return None
 
 
-def parsear_pack_variantes(valor):
+def parsear_pack_variantes(valor, precio_base=None):
     if valor in (None, ''):
         return []
     valores = valor if isinstance(valor, list) else str(valor).replace(';', ',').split(',')
     try:
-        variantes = sorted({int(item) for item in valores if str(item).strip()})
+        variantes = []
+        for item in valores:
+            if isinstance(item, dict):
+                unidades = int(item.get('unidades'))
+                precio = redondear_dinero(item.get('precio'))
+            else:
+                partes = str(item).strip().split(':', 1)
+                unidades = int(partes[0])
+                precio = redondear_dinero(partes[1]) if len(partes) == 2 else redondear_dinero((precio_base or 0) * unidades)
+            variantes.append({'unidades': unidades, 'precio': precio})
     except (TypeError, ValueError):
         return None
-    return variantes if all(item > 1 for item in variantes) else None
+    variantes.sort(key=lambda item: item['unidades'])
+    return variantes if variantes and all(item['unidades'] > 1 and item['precio'] >= 0 for item in variantes) else None
+
+
+def normalizar_pack_variantes(producto):
+    variantes = producto.get('pack_variantes') or []
+    normalizadas = parsear_pack_variantes(variantes, producto.get('precio'))
+    producto['pack_variantes'] = normalizadas or []
+    producto['descuento_pct'] = 0
+    producto['precio_final'] = producto.get('precio', 0)
 
 
 def redondear_dinero(valor):
     return float(Decimal(str(valor)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP))
-
-
-def precio_con_descuento(precio, descuento_pct):
-    precio_decimal = Decimal(str(precio))
-    descuento_decimal = Decimal(str(descuento_pct))
-    precio_final = precio_decimal * (Decimal('1') - descuento_decimal / Decimal('100'))
-    return redondear_dinero(precio_final)
 
 
 csv_catalogo_mtime_ns = None
@@ -103,6 +114,9 @@ def cargar_catalogo_csv():
             precio = round(precio or 0, 2)
 
             cantidad = numero_opcional(fila.get('cantidad')) or 0
+            packs = parsear_pack_variantes(fila.get('packs'), precio)
+            if not packs:
+                packs = [{'unidades': max(1, int(cantidad)), 'precio': precio}] if cantidad >= 1 else []
             productos.append({
                 'id': producto_id,
                 'nombre': (fila.get('producto') or '').strip(),
@@ -111,7 +125,7 @@ def cargar_catalogo_csv():
                 'precio_final': precio,
                 'stock': max(0, int(cantidad)),
                 'imagen': '',
-                'pack_variantes': []
+                'pack_variantes': packs
             })
     return productos
 
@@ -138,9 +152,7 @@ def inicializar_catalogo():
             if guardado.get('csv_mtime_ns') == csv_mtime_ns and isinstance(guardado.get('bebidas'), list):
                 csv_catalogo_mtime_ns = csv_mtime_ns
                 for producto in guardado['bebidas']:
-                    producto['descuento_pct'] = 0
-                    producto['precio_final'] = producto.get('precio', 0)
-                    producto['pack_variantes'] = producto.get('pack_variantes') or []
+                    normalizar_pack_variantes(producto)
                 return guardado['bebidas']
         except (OSError, json.JSONDecodeError):
             pass
@@ -197,7 +209,7 @@ def get_configuracion():
 @app.route('/api/bebidas', methods=['GET'])
 def get_bebidas():
     return jsonify([
-        {**bebida, "disponible": bebida["stock"] > 0 and bebida["precio"] > 0}
+        {**bebida, "disponible": bebida["stock"] > 0 and bool(bebida.get('pack_variantes'))}
         for bebida in bebidas
     ])
 
@@ -217,20 +229,17 @@ def crear_pedido():
             if cantidad < 1 or producto_id not in productos_por_id:
                 raise ValueError
             producto = productos_por_id[producto_id]
-            formato = item.get('formato', 'unidades')
+            if item.get('formato') != 'pack':
+                raise ValueError
             pack_units = int(item.get('pack_units') or 0)
-            if formato == 'pack':
-                variantes = {int(valor) for valor in producto.get('pack_variantes', [])}
-                if pack_units not in variantes or cantidad % pack_units != 0:
-                    raise ValueError
-                cantidad_formato = cantidad // pack_units
-                nombre_item = f"{producto['nombre']} (Pack x{pack_units})"
-            else:
-                pack_units = 1
-                cantidad_formato = cantidad
-                nombre_item = producto['nombre']
-            unidades_por_producto[producto_id] = unidades_por_producto.get(producto_id, 0) + cantidad
-            items_solicitados.append((producto, cantidad, cantidad_formato, formato, pack_units, nombre_item))
+            variante = next((valor for valor in producto.get('pack_variantes', []) if valor['unidades'] == pack_units), None)
+            if variante is None:
+                raise ValueError
+            cantidad_packs = cantidad
+            unidades_totales = cantidad_packs * pack_units
+            nombre_item = f"{producto['nombre']} (Pack x{pack_units})"
+            unidades_por_producto[producto_id] = unidades_por_producto.get(producto_id, 0) + unidades_totales
+            items_solicitados.append((producto, cantidad_packs, unidades_totales, pack_units, variante['precio'], nombre_item))
     except (AttributeError, TypeError, ValueError):
         return jsonify({"status": "error", "mensaje": "Detalle del pedido inválido"}), 400
 
@@ -244,17 +253,17 @@ def crear_pedido():
         producto = productos_por_id[producto_id]
         if cantidad_total > producto['stock']:
             return jsonify({"status": "error", "mensaje": f"Stock insuficiente para {producto['nombre']}"}), 409
-    for producto, cantidad, cantidad_formato, formato, pack_units, nombre_item in items_solicitados:
-        precio_normal = round(float(producto['precio']), 2)
-        total_normal = round(precio_normal * cantidad, 2)
+    for producto, cantidad_packs, unidades_totales, pack_units, precio_pack, nombre_item in items_solicitados:
+        precio_normal = redondear_dinero(precio_pack)
+        total_normal = redondear_dinero(precio_normal * cantidad_packs)
         subtotal += total_normal
         items_pedido.append({
             'id': producto['id'],
             'nombre': nombre_item,
-            'cantidad': cantidad_formato,
-            'unidades_totales': cantidad,
-            'formato': formato,
-            'pack_units': pack_units if formato == 'pack' else None,
+            'cantidad': cantidad_packs,
+            'unidades_totales': unidades_totales,
+            'formato': 'pack',
+            'pack_units': pack_units,
             'precio_normal': precio_normal,
             'precio_unitario': precio_normal,
             'descuento_pct': 0,
@@ -361,7 +370,7 @@ def admin_get_pedidos():
 def agregar_producto():
     nombre = (request.form.get('nombre') or '').strip()
     precio = numero_opcional(request.form.get('precio'))
-    pack_variantes = parsear_pack_variantes(request.form.get('pack_variantes'))
+    pack_variantes = parsear_pack_variantes(request.form.get('pack_variantes'), precio)
     stock = numero_opcional(request.form.get('stock'))
     if not nombre or precio is None or precio < 0 or pack_variantes is None or stock is None or stock < 0:
         return jsonify({"status": "error", "mensaje": "Revise nombre, precio, packs y stock"}), 400
@@ -396,7 +405,7 @@ def actualizar_producto():
         p_id = int(data.get('id'))
         nuevo_precio = float(data.get('precio'))
         nuevo_stock = int(data.get('stock'))
-        pack_variantes = parsear_pack_variantes(data.get('pack_variantes'))
+        pack_variantes = parsear_pack_variantes(data.get('pack_variantes'), nuevo_precio)
     except (TypeError, ValueError):
         return jsonify({"status": "error", "mensaje": "Precio, packs o stock inválido"}), 400
     if nuevo_precio < 0 or pack_variantes is None or nuevo_stock < 0:
