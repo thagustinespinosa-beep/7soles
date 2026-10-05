@@ -61,15 +61,11 @@
                 </div>
                 <div>
                     <label>Precio normal ($):</label>
-                    <input type="number" min="0" step="0.01" id="nuevo-precio" required placeholder="Ej: 2500" oninput="actualizarPrecioNuevo()">
+                    <input type="number" min="0" step="0.01" id="nuevo-precio" required placeholder="Ej: 2500">
                 </div>
                 <div>
-                    <label>Descuento del producto (%):</label>
-                    <input type="number" min="0" max="99.99" step="0.01" id="nuevo-descuento" value="0" required oninput="actualizarPrecioNuevo()">
-                </div>
-                <div>
-                    <label>Precio final ($):</label>
-                    <input type="number" id="nuevo-precio-final" readonly>
+                    <label>Variantes de pack (ej: 6, 12, 24):</label>
+                    <input type="text" id="nuevo-packs" placeholder="6, 12, 24">
                 </div>
                 <div>
                     <label>Stock inicial:</label>
@@ -99,8 +95,7 @@
                         <th>Imagen</th>
                         <th>Producto</th>
                         <th>Precio normal ($)</th>
-                        <th>Descuento (%)</th>
-                        <th>Precio final ($)</th>
+                        <th>Packs</th>
                         <th>Stock Actual</th>
                         <th>Acción</th>
                     </tr>
@@ -122,10 +117,6 @@
             return Number(valor || 0).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
 
-        function calcularPrecioFinal(precio, descuento) {
-            return Math.round((Number(precio || 0) * (1 - Number(descuento || 0) / 100) + Number.EPSILON) * 100) / 100;
-        }
-
         function escaparHtml(valor) {
             return String(valor || '').replace(/[&<>"']/g, caracter => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[caracter]));
         }
@@ -136,22 +127,15 @@
             return `/static/uploads/${encodeURIComponent(imagen)}`;
         }
 
-        function actualizarPrecioNuevo() {
-            const precio = document.getElementById('nuevo-precio').value;
-            const descuento = document.getElementById('nuevo-descuento').value;
-            document.getElementById('nuevo-precio-final').value = calcularPrecioFinal(precio, descuento).toFixed(2);
-        }
-
-        function actualizarPrecioFinal(id) {
-            const precio = document.getElementById(`precio-${id}`).value;
-            const descuento = document.getElementById(`descuento-${id}`).value;
-            document.getElementById(`precio-final-${id}`).value = calcularPrecioFinal(precio, descuento).toFixed(2);
-        }
+        let pausaPolling = false;
 
         async function cargarPedidos() {
+            if (pausaPolling) return;
             try {
                 const res = await fetch('/api/admin/pedidos');
-                todosLosPedidos = await res.json();
+                const pedidosActualizados = await res.json();
+                if (pausaPolling) return;
+                todosLosPedidos = pedidosActualizados;
                 
                 // Actualizar contadores
                 document.getElementById('cant-pendiente').innerText = todosLosPedidos.filter(p => p.estado === 'Pendiente').length;
@@ -368,9 +352,8 @@
                             <button class="btn-guardar" type="button" onclick="actualizarImagen(${p.id})">Cambiar imagen</button>
                         </td>
                         <td><strong>${escaparHtml(p.nombre)}</strong></td>
-                        <td><input type="number" min="0" id="precio-${p.id}" value="${p.precio}" step="0.01" oninput="actualizarPrecioFinal(${p.id})"></td>
-                        <td><input type="number" min="0" max="99.99" id="descuento-${p.id}" value="${p.descuento_pct}" step="0.01" oninput="actualizarPrecioFinal(${p.id})"></td>
-                        <td><input type="number" id="precio-final-${p.id}" value="${Number(p.precio_final).toFixed(2)}" readonly></td>
+                        <td><input type="number" min="0" id="precio-${p.id}" value="${p.precio}" step="0.01"></td>
+                        <td><input type="text" id="packs-${p.id}" value="${(p.pack_variantes || []).join(', ')}" placeholder="6, 12, 24"></td>
                         <td><input type="number" min="0" step="1" id="stock-${p.id}" value="${p.stock}"></td>
                         <td style="display: flex; gap: 6px;">
                             <button class="btn-guardar" onclick="guardarCambios(${p.id})">Guardar</button>
@@ -389,7 +372,7 @@
             const formData = new FormData();
             formData.append('nombre', document.getElementById('nuevo-nombre').value);
             formData.append('precio', document.getElementById('nuevo-precio').value);
-            formData.append('descuento_pct', document.getElementById('nuevo-descuento').value);
+            formData.append('pack_variantes', document.getElementById('nuevo-packs').value);
             formData.append('stock', document.getElementById('nuevo-stock').value);
             formData.append('imagen_url', document.getElementById('nuevo-imagen-url').value);
             
@@ -406,7 +389,6 @@
             if (res.ok) {
                 alert("Bebida agregada con éxito");
                 document.getElementById('form-nueva-bebida').reset();
-                actualizarPrecioNuevo();
                 cargarAdmin();
             } else {
                 const data = await res.json();
@@ -416,13 +398,13 @@
 
         async function guardarCambios(id) {
             const precio = document.getElementById(`precio-${id}`).value;
-            const descuento_pct = document.getElementById(`descuento-${id}`).value;
+            const pack_variantes = document.getElementById(`packs-${id}`).value;
             const stock = document.getElementById(`stock-${id}`).value;
 
             const res = await fetch('/api/admin/actualizar_producto', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id, precio, descuento_pct, stock })
+                body: JSON.stringify({ id, precio, pack_variantes, stock })
             });
 
             if (res.ok) {
@@ -506,9 +488,23 @@
         }
 
         // Carga inicial
-        actualizarPrecioNuevo();
         cargarAdmin();
         cargarPedidos();
+
+        const listaPedidos = document.getElementById('lista-pedidos');
+        listaPedidos.addEventListener('focusin', event => {
+            if (event.target.matches('input[id^="costo-envio-"]')) pausaPolling = true;
+        });
+        listaPedidos.addEventListener('input', event => {
+            if (event.target.matches('input[id^="costo-envio-"]')) pausaPolling = true;
+        });
+        listaPedidos.addEventListener('focusout', event => {
+            if (event.target.matches('input[id^="costo-envio-"]')) {
+                window.setTimeout(() => {
+                    if (!listaPedidos.querySelector('input[id^="costo-envio-"]:focus')) pausaPolling = false;
+                }, 150);
+            }
+        });
 
         // Recarga automática cada 5 segundos para recibir pedidos en tiempo real
         setInterval(cargarPedidos, 5000);

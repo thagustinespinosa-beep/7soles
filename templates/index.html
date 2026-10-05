@@ -33,7 +33,6 @@
             <div id="carrito-items"></div>
             <hr>
             <div class="total-row"><strong>Subtotal:</strong> $<span id="subtotal-precio">0.00</span></div>
-            <p id="descuento-producto-fila" class="nota-pago hidden">Descuentos de productos por efectivo: −$<span id="descuento-producto">0.00</span></p>
             <p id="descuento-efectivo-fila" class="nota-pago hidden">Descuento global en efectivo (2%): −$<span id="descuento-efectivo">0.00</span></p>
             <div class="total-row"><strong>Total:</strong> $<span id="total-precio">0.00</span></div>
             <p id="aviso-envio-pendiente" class="nota-pago hidden">Costo de envío: A confirmar por el vendedor según la zona. El total mostrado corresponde a los productos.</p>
@@ -94,13 +93,17 @@
             return `/static/uploads/${encodeURIComponent(imagen)}`;
         }
 
+        function claveCarrito(id, formato, packUnits) {
+            return `${id}-${formato}-${packUnits}`;
+        }
+
         async function cargarCatalogo() {
             try {
                 const res = await fetch('/api/bebidas', { cache: 'no-store' });
                 catalog = await res.json();
                 carrito = carrito.map(item => {
                     const actualizado = catalog.find(producto => producto.id === item.id);
-                    return actualizado ? { ...actualizado, cantidad: Math.min(item.cantidad, actualizado.stock) } : null;
+                    return actualizado ? { ...actualizado, cantidad: Math.min(item.cantidad, actualizado.stock), cantidad_formato: item.cantidad_formato, formato: item.formato, pack_units: item.pack_units } : null;
                 }).filter(item => item && item.cantidad > 0);
                 actualizarCarritoUI();
                 const query = document.getElementById('buscar-input').value.toLowerCase();
@@ -145,8 +148,12 @@
             lista.forEach(item => {
                 const card = document.createElement('div');
                 card.className = `card ${!item.disponible ? 'sin-stock-card' : ''}`;
-                const cantidad = Math.min(cantidadesSeleccionadas[item.id] || 1, Math.max(item.stock, 1));
+                const packs = (item.pack_variantes || []).map(Number).filter(valor => valor > 1);
+                const cantidad = Math.min(cantidadesSeleccionadas[item.id] || 1, Math.max(Math.floor(item.stock / (packs[0] || 1)), 1));
                 const imgSrc = rutaImagen(item.imagen);
+                const opcionesFormato = packs.length
+                    ? `<label>Formato de venta:</label><select id="formato-${item.id}" onchange="actualizarLimiteCantidad(${item.id})"><option value="unidades" data-pack-units="1">Unidades</option>${packs.map(pack => `<option value="pack" data-pack-units="${pack}">Pack x${pack}</option>`).join('')}</select>`
+                    : '';
 
                 card.innerHTML = `
                     <div class="img-container">
@@ -155,8 +162,8 @@
                     </div>
                     <h3>${escaparHtml(item.nombre)}</h3>
                     <p class="precio"><strong>$${formatoMoneda(item.precio)}</strong></p>
-                    ${Number(item.descuento_pct) > 0 ? `<span class="badge-descuento">Aplica ${Number(item.descuento_pct).toLocaleString('es-AR')}% de descuento pagando en efectivo</span>` : ''}
                     <span class="badge-efectivo">Aplica 2% global de descuento pagando en efectivo</span>
+                    ${opcionesFormato}
                     <div class="selector-cantidad" aria-label="Elegir cantidad">
                         <button type="button" aria-label="Restar una unidad" onclick="cambiarCantidadSeleccionada(${item.id}, -1)" ${!item.disponible ? 'disabled' : ''}>−</button>
                         <input type="number" id="cantidad-producto-${item.id}" min="1" max="${item.stock}" value="${cantidad}" aria-label="Cantidad de ${escaparHtml(item.nombre)}" onchange="establecerCantidadSeleccionada(${item.id}, this.value)" ${!item.disponible ? 'disabled' : ''}>
@@ -182,13 +189,18 @@
         function agregarAlCarrito(id) {
             const prod = catalog.find(b => b.id === id);
             if (!prod || !prod.disponible) return;
-            const cantidad = Math.max(1, Number(cantidadesSeleccionadas[id] || 1));
+            const selector = document.getElementById(`formato-${id}`);
+            const formato = selector?.value || 'unidades';
+            const packUnits = formato === 'pack' ? Number(selector.selectedOptions[0].dataset.packUnits) : 1;
+            const cantidadFormato = Math.max(1, Number(cantidadesSeleccionadas[id] || 1));
+            const cantidad = cantidadFormato * packUnits;
 
-            const itemInCart = carrito.find(item => item.id === id);
+            const itemInCart = carrito.find(item => claveCarrito(item.id, item.formato || 'unidades', item.pack_units || 1) === claveCarrito(id, formato, packUnits));
             if (itemInCart) {
                 itemInCart.cantidad = Math.min(prod.stock, itemInCart.cantidad + cantidad);
+                itemInCart.cantidad_formato = Math.floor(itemInCart.cantidad / packUnits);
             } else {
-                carrito.push({ ...prod, cantidad: Math.min(prod.stock, cantidad) });
+                carrito.push({ ...prod, cantidad: Math.min(prod.stock, cantidad), cantidad_formato: cantidadFormato, formato, pack_units: packUnits });
             }
             actualizarCarritoUI();
         }
@@ -204,14 +216,28 @@
         function establecerCantidadSeleccionada(id, valor) {
             const producto = catalog.find(item => item.id === id);
             if (!producto) return;
-            cantidadesSeleccionadas[id] = Math.max(1, Math.min(producto.stock, Math.floor(Number(valor) || 1)));
+            const selector = document.getElementById(`formato-${id}`);
+            const packUnits = selector?.value === 'pack' ? Number(selector.selectedOptions[0].dataset.packUnits) : 1;
+            cantidadesSeleccionadas[id] = Math.max(1, Math.min(Math.floor(producto.stock / packUnits), Math.floor(Number(valor) || 1)));
         }
 
-        function cambiarCantidadCarrito(id, cambio) {
-            const producto = carrito.find(item => item.id === id);
+        function actualizarLimiteCantidad(id) {
+            const producto = catalog.find(item => item.id === id);
+            const input = document.getElementById(`cantidad-producto-${id}`);
+            if (!producto || !input) return;
+            const selector = document.getElementById(`formato-${id}`);
+            const packUnits = selector?.value === 'pack' ? Number(selector.selectedOptions[0].dataset.packUnits) : 1;
+            input.max = Math.floor(producto.stock / packUnits);
+            establecerCantidadSeleccionada(id, input.value);
+            input.value = cantidadesSeleccionadas[id];
+        }
+
+        function cambiarCantidadCarrito(id, cambio, formato = 'unidades', packUnits = 1) {
+            const producto = carrito.find(item => claveCarrito(item.id, item.formato || 'unidades', item.pack_units || 1) === claveCarrito(id, formato, packUnits));
             if (!producto) return;
-            producto.cantidad = Math.min(producto.stock, producto.cantidad + cambio);
-            if (producto.cantidad < 1) carrito = carrito.filter(item => item.id !== id);
+            producto.cantidad = Math.min(producto.stock, producto.cantidad + cambio * packUnits);
+            producto.cantidad_formato = Math.floor(producto.cantidad / packUnits);
+            if (producto.cantidad < packUnits) carrito = carrito.filter(item => item !== producto);
             actualizarCarritoUI();
         }
 
@@ -219,43 +245,35 @@
             const container = document.getElementById('carrito-items');
             container.innerHTML = '';
             let subtotal = 0;
-            let subtotalConDescuentoProducto = 0;
             let count = 0;
             const aplicaEfectivo = document.getElementById('metodo-pago').value === 'Efectivo';
 
             carrito.forEach(item => {
                 const precioNormal = Number(item.precio);
-                const precioCobrado = aplicaEfectivo
-                    ? Number(item.precio_final ?? precioNormal)
-                    : precioNormal;
                 const totalNormal = precioNormal * item.cantidad;
-                const totalItem = precioCobrado * item.cantidad;
                 subtotal += totalNormal;
-                subtotalConDescuentoProducto += totalItem;
                 count += item.cantidad;
+                const packUnits = item.pack_units || 1;
+                const cantidadFormato = item.cantidad_formato || Math.floor(item.cantidad / packUnits);
                 const div = document.createElement('div');
                 div.className = 'cart-item';
                 div.innerHTML = `
-                    <p><strong>${escaparHtml(item.nombre)}</strong> × ${item.cantidad} · $${formatoMoneda(totalItem)}${aplicaEfectivo && Number(item.descuento_pct) > 0 ? ` <small>(precio con descuento en efectivo)</small>` : ''}</p>
+                    <p><strong>${escaparHtml(item.nombre)}</strong> × ${cantidadFormato} · $${formatoMoneda(totalNormal)}</p>
                     <div class="selector-cantidad selector-carrito">
-                        <button type="button" aria-label="Quitar una unidad" onclick="cambiarCantidadCarrito(${item.id}, -1)">−</button>
-                        <span>${item.cantidad}</span>
-                        <button type="button" aria-label="Agregar una unidad" onclick="cambiarCantidadCarrito(${item.id}, 1)" ${item.cantidad >= item.stock ? 'disabled' : ''}>+</button>
+                        <button type="button" aria-label="Quitar una unidad" onclick="cambiarCantidadCarrito(${item.id}, -1, '${item.formato || 'unidades'}', ${packUnits})">−</button>
+                        <span>${cantidadFormato}</span>
+                        <button type="button" aria-label="Agregar una unidad" onclick="cambiarCantidadCarrito(${item.id}, 1, '${item.formato || 'unidades'}', ${packUnits})" ${item.cantidad + packUnits > item.stock ? 'disabled' : ''}>+</button>
                     </div>
                 `;
                 container.appendChild(div);
             });
 
             subtotal = Math.round((subtotal + Number.EPSILON) * 100) / 100;
-            subtotalConDescuentoProducto = Math.round((subtotalConDescuentoProducto + Number.EPSILON) * 100) / 100;
-            const descuentoProducto = aplicaEfectivo ? Math.round((subtotal - subtotalConDescuentoProducto + Number.EPSILON) * 100) / 100 : 0;
-            const descuento = aplicaEfectivo ? Math.round((subtotalConDescuentoProducto * 0.02 + Number.EPSILON) * 100) / 100 : 0;
+            const descuento = aplicaEfectivo ? Math.round((subtotal * 0.02 + Number.EPSILON) * 100) / 100 : 0;
             document.getElementById('subtotal-precio').innerText = formatoMoneda(subtotal);
-            document.getElementById('descuento-producto').innerText = formatoMoneda(descuentoProducto);
             document.getElementById('descuento-efectivo').innerText = formatoMoneda(descuento);
-            document.getElementById('descuento-producto-fila').classList.toggle('hidden', !aplicaEfectivo || descuentoProducto === 0);
             document.getElementById('descuento-efectivo-fila').classList.toggle('hidden', !aplicaEfectivo || subtotal === 0);
-            document.getElementById('total-precio').innerText = formatoMoneda(subtotalConDescuentoProducto - descuento);
+            document.getElementById('total-precio').innerText = formatoMoneda(subtotal - descuento);
             document.getElementById('cart-count').innerText = count;
         }
 
