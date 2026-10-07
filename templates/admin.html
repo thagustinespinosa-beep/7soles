@@ -109,6 +109,8 @@
 
     </div>
 
+    <div id="ticket-impresion" aria-hidden="true"></div>
+
     <script>
         let todosLosPedidos = [];
         let estadoFiltroActual = 'Pendiente';
@@ -125,6 +127,45 @@
             if (!imagen) return '/static/images/producto-sin-imagen.svg';
             if (/^https?:\/\//i.test(imagen) || imagen.startsWith('/')) return imagen;
             return `/static/uploads/${encodeURIComponent(imagen)}`;
+        }
+
+        function escaparTicket(valor) {
+            return escaparHtml(valor || '-');
+        }
+
+        function imprimirTicket(pedido) {
+            const fecha = new Date().toLocaleString('es-AR');
+            const subtotalProductos = Number(pedido.subtotal_productos ?? pedido.subtotal ?? 0);
+            const costoEnvio = pedido.entrega === 'delivery' ? Number(pedido.costo_envio || 0) : 0;
+            const items = (pedido.items || []).map(item => `
+                <div class="ticket-item">
+                    <span>${item.cantidad} x ${escaparTicket(item.nombre)}</span>
+                    <strong>$${formatoPrecio(item.total)}</strong>
+                </div>
+            `).join('');
+            const direccion = pedido.direccion && pedido.direccion !== 'Retiro en local'
+                ? pedido.direccion
+                : 'Retiro en local';
+
+            const ticket = document.getElementById('ticket-impresion');
+            ticket.innerHTML = `
+                <h1>7 SOLES II</h1>
+                <p class="ticket-centro">${fecha}</p>
+                <hr>
+                <p><strong>Pedido #${pedido.id}</strong></p>
+                <p>Cliente: ${escaparTicket(pedido.cliente)}</p>
+                <p>Teléfono: ${escaparTicket(pedido.telefono)}</p>
+                <p>Entrega: ${escaparTicket(direccion)}</p>
+                <hr>
+                <h2>DETALLE</h2>
+                ${items || '<p>Sin productos</p>'}
+                <hr>
+                <div class="ticket-total"><span>Subtotal Productos</span><strong>$${formatoPrecio(subtotalProductos)}</strong></div>
+                ${pedido.entrega === 'delivery' ? `<div class="ticket-total"><span>Costo de Envío</span><strong>$${formatoPrecio(costoEnvio)}</strong></div>` : ''}
+                <div class="ticket-total ticket-final"><span>TOTAL FINAL A PAGAR</span><strong>$${formatoPrecio(pedido.total)}</strong></div>
+                <p class="ticket-centro">Método de pago: ${escaparTicket(pedido.metodoPago)}</p>
+            `;
+            window.print();
         }
 
         let pausaPolling = false;
@@ -266,6 +307,9 @@
                 }
 
                 alert(`Pedido aceptado. Total final: $${formatoPrecio(data.total)}.`);
+                const pedidoParaTicket = { ...pedido, ...data, total: data.total };
+                if (data.costo_envio != null) pedidoParaTicket.costo_envio = data.costo_envio;
+                imprimirTicket(pedidoParaTicket);
                 cargarPedidos();
             } catch (error) {
                 alert(`No se pudo conectar con el servidor para confirmar el pedido: ${error.message}`);

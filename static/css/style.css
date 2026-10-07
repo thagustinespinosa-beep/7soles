@@ -11,6 +11,80 @@ body {
     font-variant-numeric: lining-nums tabular-nums;
 }
 
+#ticket-impresion {
+    display: none;
+}
+
+@media print {
+    @page {
+        size: 80mm auto;
+        margin: 0;
+    }
+
+    body * {
+        display: none !important;
+    }
+
+    #ticket-impresion,
+    #ticket-impresion * {
+        display: block !important;
+    }
+
+    #ticket-impresion {
+        width: 100%;
+        max-width: 80mm;
+        margin: 0;
+        padding: 0;
+        color: #000;
+        background: #fff;
+        font-family: monospace;
+        font-size: 12px;
+        line-height: 1.3;
+    }
+
+    #ticket-impresion h1,
+    #ticket-impresion h2,
+    #ticket-impresion p {
+        margin: 4px 0;
+    }
+
+    #ticket-impresion h1,
+    #ticket-impresion h2,
+    .ticket-centro {
+        text-align: center;
+    }
+
+    #ticket-impresion hr {
+        border: 0;
+        border-top: 1px dashed #000;
+        margin: 8px 0;
+    }
+
+    .ticket-item,
+    .ticket-total {
+        display: flex !important;
+        justify-content: space-between;
+        gap: 8px;
+    }
+
+    .ticket-item span,
+    .ticket-total span {
+        text-align: left;
+    }
+
+    .ticket-item strong,
+    .ticket-total strong {
+        margin-left: auto;
+        text-align: right;
+        white-space: nowrap;
+    }
+
+    .ticket-final {
+        font-size: 14px;
+        font-weight: bold;
+    }
+}
+
 header {
     background-color: #1a252f;
     color: white;
